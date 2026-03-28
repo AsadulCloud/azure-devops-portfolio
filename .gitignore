@@ -1,0 +1,6 @@
+﻿*.pem
+*.key
+*.pfx
+.env
+secrets/
+passwords.txt
