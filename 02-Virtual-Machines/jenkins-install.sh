@@ -36,6 +36,6 @@ sudo apt install jenkins
 ps -ef | grep jenkins
 
 # Check Status
-sudo systemctl status jenkins-install.sh
+sudo systemctl status jenkins-install
 echo "Jenkins running at http://20.250.17.39:4000
 
