@@ -34,5 +34,7 @@ sudo apt install jenkins
 # Run Jenkins on which port
 ps -ef | grep jenkins
 
+# Check Status
+sudo systemctl status jenkins-install.sh
 echo "Jenkins running at http://20.250.17.39:4000
 
