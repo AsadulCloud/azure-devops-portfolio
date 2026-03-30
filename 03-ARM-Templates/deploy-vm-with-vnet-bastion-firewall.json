@@ -1,0 +1,474 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+
+    "parameters": {
+        "prefix": {
+            "type": "string",
+            "defaultValue": "asad",
+            "metadata": {
+                "description": "Prefix for all resource names. Example: asad, prod, test"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "defaultValue": "azureuser",
+            "metadata": {
+                "description": "VM admin username"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "VM admin password - min 12 chars"
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "defaultValue": "Standard_B2s",
+            "metadata": {
+                "description": "Size of the VM. Example: Standard_B2s, Standard_D2s_v3"
+            }
+        }
+    },
+
+    "variables": {
+
+        "vnetName": "[concat(parameters('prefix'), '-vnet')]",
+        "vnetAddressPrefix": "10.0.0.0/16",
+
+        "defaultSubnetName": "[concat(parameters('prefix'), '-default-subnet')]",
+        "defaultSubnetPrefix": "10.0.0.0/24",
+
+        "firewallSubnetName": "AzureFirewallSubnet",
+        "firewallSubnetPrefix": "10.0.1.0/26",
+
+        "bastionSubnetName": "AzureBastionSubnet",
+        "bastionSubnetPrefix": "10.0.2.0/27",
+
+        "firewallName": "[concat(parameters('prefix'), '-firewall')]",
+        "firewallPublicIPName": "[concat(parameters('prefix'), '-firewall-pip')]",
+
+        "bastionName": "[concat(parameters('prefix'), '-bastion')]",
+        "bastionPublicIPName": "[concat(parameters('prefix'), '-bastion-pip')]",
+
+        "vmName": "[concat(parameters('prefix'), '-vm')]",
+        "vmNicName": "[concat(parameters('prefix'), '-vm-nic')]",
+        "vmNsgName": "[concat(parameters('prefix'), '-vm-nsg')]",
+        "osDiskName": "[concat(parameters('prefix'), '-vm-osdisk')]"
+
+    },
+
+    "resources": [
+
+        {
+            "comments": "======== RESOURCE 1 - VIRTUAL NETWORK ========",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('vnetName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vnetAddressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('defaultSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('defaultSubnetPrefix')]"
+                        }
+                    },
+                    {
+                        "name": "[variables('firewallSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('firewallSubnetPrefix')]"
+                        }
+                    },
+                    {
+                        "name": "[variables('bastionSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('bastionSubnetPrefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 2 - FIREWALL PUBLIC IP ========",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('firewallPublicIPName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 3 - BASTION PUBLIC IP ========",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('bastionPublicIPName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 4 - AZURE FIREWALL ========",
+            "name": "[variables('firewallName')]",
+            "type": "Microsoft.Network/azureFirewalls",
+            "apiVersion": "2024-03-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))]"
+            ],
+            "properties": {
+                "applicationRuleCollections": [
+                    {
+                        "name": "app-rule-collection",
+                        "properties": {
+                            "priority": 100,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "allow-web-access",
+                                    "description": "Allow VM to access internet for updates and installs",
+                                    "sourceAddresses": [
+                                        "10.0.0.0/24"
+                                    ],
+                                    "protocols": [
+                                        {
+                                            "protocolType": "Http",
+                                            "port": 80
+                                        },
+                                        {
+                                            "protocolType": "Https",
+                                            "port": 443
+                                        }
+                                    ],
+                                    "targetFqdns": [
+                                        "*.ubuntu.com",
+                                        "*.microsoft.com",
+                                        "*.github.com",
+                                        "*.jenkins.io"
+                                    ],
+                                    "fqdnTags": []
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "natRuleCollections": [
+                    {
+                        "name": "nat-rule-collection",
+                        "properties": {
+                            "priority": 100,
+                            "action": {
+                                "type": "Dnat"
+                            },
+                            "rules": [
+                                {
+                                    "name": "allow-http-to-vm",
+                                    "description": "Forward port 80 from firewall public IP to VM Nginx",
+                                    "sourceAddresses": [
+                                        "*"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))).ipAddress]"
+                                    ],
+                                    "destinationPorts": [
+                                        "80"
+                                    ],
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "translatedAddress": "10.0.0.4",
+                                    "translatedPort": "80"
+                                },
+                                {
+                                    "name": "allow-jenkins-to-vm",
+                                    "description": "Forward port 8080 from firewall public IP to VM Jenkins",
+                                    "sourceAddresses": [
+                                        "*"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))).ipAddress]"
+                                    ],
+                                    "destinationPorts": [
+                                        "8080"
+                                    ],
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "translatedAddress": "10.0.0.4",
+                                    "translatedPort": "8080"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "networkRuleCollections": [
+                    {
+                        "name": "network-rule-collection",
+                        "properties": {
+                            "priority": 200,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "allow-dns",
+                                    "description": "Allow DNS resolution from VM",
+                                    "sourceAddresses": [
+                                        "10.0.0.0/24"
+                                    ],
+                                    "destinationAddresses": [
+                                        "8.8.8.8",
+                                        "8.8.4.4"
+                                    ],
+                                    "destinationPorts": [
+                                        "53"
+                                    ],
+                                    "protocols": [
+                                        "UDP"
+                                    ]
+                                },
+                                {
+                                    "name": "allow-ntp",
+                                    "description": "Allow time sync from VM",
+                                    "sourceAddresses": [
+                                        "10.0.0.0/24"
+                                    ],
+                                    "destinationAddresses": [
+                                        "*"
+                                    ],
+                                    "destinationPorts": [
+                                        "123"
+                                    ],
+                                    "protocols": [
+                                        "UDP"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "ipConfigurations": [
+                    {
+                        "name": "firewallIpConfig",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('firewallSubnetName'))]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 5 - AZURE BASTION ========",
+            "type": "Microsoft.Network/bastionHosts",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('bastionName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('bastionPublicIPName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "bastionIpConfig",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('bastionSubnetName'))]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('bastionPublicIPName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 6 - NSG FOR VM SUBNET ========",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('vmNsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-HTTP",
+                        "properties": {
+                            "priority": 100,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80",
+                            "description": "Allow HTTP traffic to Nginx"
+                        }
+                    },
+                    {
+                        "name": "Allow-Jenkins",
+                        "properties": {
+                            "priority": 110,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "8080",
+                            "description": "Allow Jenkins traffic"
+                        }
+                    },
+                    {
+                        "name": "Allow-SSH-From-Bastion",
+                        "properties": {
+                            "priority": 120,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "[variables('bastionSubnetPrefix')]",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22",
+                            "description": "Allow SSH only from Bastion subnet"
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 7 - NETWORK INTERFACE ========",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('vmNicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('vmNsgName'))]"
+            ],
+            "properties": {
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('vmNsgName'))]"
+                },
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "10.0.0.4",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('defaultSubnetName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            "comments": "======== RESOURCE 8 - VIRTUAL MACHINE ========",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2024-03-01",
+            "name": "[variables('vmName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('vmNicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[variables('vmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "ubuntu-24_04-lts",
+                        "sku": "server",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[variables('osDiskName')]",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vmNicName'))]"
+                        }
+                    ]
+                }
+            }
+        }
+
+    ],
+
+    "outputs": {
+        "firewallPublicIP": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))).ipAddress]"
+        },
+        "vmPrivateIP": {
+            "type": "string",
+            "value": "10.0.0.4"
+        },
+        "nginxURL": {
+            "type": "string",
+            "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))).ipAddress)]"
+        },
+        "jenkinsURL": {
+            "type": "string",
+            "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIPName'))).ipAddress, ':8080')]"
+        },
+        "vnetName": {
+            "type": "string",
+            "value": "[variables('vnetName')]"
+        },
+        "vmName": {
+            "type": "string",
+            "value": "[variables('vmName')]"
+        }
+    }
+}
