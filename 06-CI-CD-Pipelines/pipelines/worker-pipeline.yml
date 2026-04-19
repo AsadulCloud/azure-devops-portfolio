@@ -1,0 +1,105 @@
+# worker-pipeline.yml
+# CI/CD Pipeline for the Worker service (.NET / C#)
+# Builds a Docker image and pushes it to Azure Container Registry
+#
+# NOTE: This pipeline uses docker buildx for the .NET multi-stage build.
+# The --platform flag is passed to buildx, NOT to the standard docker build command,
+# because standard docker build does not support --platform without BuildKit.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - worker/**
+
+pool:
+  name: self-hosted   # Self-hosted agent running on Ubuntu 24.04 Azure VM
+
+variables:
+  acrName: '<your-acr-name>'
+  acrLoginServer: '<your-acr-name>.azurecr.io'
+  imageRepository: 'worker'
+  dockerfilePath: 'worker/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+stages:
+
+# ─────────────────────────────────────────────
+# STAGE 1: Build
+# ─────────────────────────────────────────────
+- stage: Build
+  displayName: 'Build Docker Image – Worker (.NET)'
+  jobs:
+  - job: BuildImage
+    displayName: 'Build worker image'
+    steps:
+
+    - task: Bash@3
+      displayName: 'Set up Docker buildx'
+      inputs:
+        targetType: inline
+        script: |
+          docker buildx create --use --name mybuilder || true
+          docker buildx inspect --bootstrap
+
+    - task: Bash@3
+      displayName: 'Build Docker image with buildx'
+      inputs:
+        targetType: inline
+        script: |
+          export DOCKER_BUILDKIT=1
+          docker buildx build \
+            --platform linux/amd64 \
+            -f $(dockerfilePath) \
+            -t $(imageRepository):$(tag) \
+            -t $(imageRepository):latest \
+            --load \
+            ./worker
+      # --load exports the image to the local Docker daemon so we can push it in the next stage.
+      # Without --load, buildx only builds and discards the image.
+      env:
+        DOCKER_BUILDKIT: '1'
+
+    # ⚠️  KNOWN FIX: dotnet restore -a $TARGETARCH
+    # The original Dockerfile had: RUN dotnet restore -a $TARGETARCH
+    # This caused the error: "Invalid option -a" during the pipeline run.
+    # Fix: removed the -a $TARGETARCH flag entirely.
+    # Final working command inside Dockerfile: RUN dotnet restore
+
+# ─────────────────────────────────────────────
+# STAGE 2: Push
+# ─────────────────────────────────────────────
+- stage: Push
+  displayName: 'Push Docker Image – Worker'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: PushImage
+    displayName: 'Tag and push worker image to ACR'
+    steps:
+
+    - task: Docker@2
+      displayName: 'Login to Azure Container Registry'
+      inputs:
+        command: login
+        containerRegistry: '<your-acr-service-connection>'
+
+    - task: Bash@3
+      displayName: 'Tag image for ACR'
+      inputs:
+        targetType: inline
+        script: |
+          docker tag $(imageRepository):$(tag) $(acrLoginServer)/$(imageRepository):$(tag)
+          docker tag $(imageRepository):latest $(acrLoginServer)/$(imageRepository):latest
+
+    - task: Docker@2
+      displayName: 'Push image to ACR'
+      inputs:
+        command: push
+        containerRegistry: '<your-acr-service-connection>'
+        repository: $(imageRepository)
+        tags: |
+          $(tag)
+          latest

@@ -1,0 +1,86 @@
+# result-pipeline.yml
+# CI/CD Pipeline for the Result service (Node.js)
+# Builds a Docker image and pushes it to Azure Container Registry
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - result/**
+
+pool:
+  name: self-hosted   # Self-hosted agent running on Ubuntu 24.04 Azure VM
+
+variables:
+  acrName: '<your-acr-name>'
+  acrLoginServer: '<your-acr-name>.azurecr.io'
+  imageRepository: 'result'
+  dockerfilePath: 'result/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+stages:
+
+# ─────────────────────────────────────────────
+# STAGE 1: Build
+# ─────────────────────────────────────────────
+- stage: Build
+  displayName: 'Build Docker Image – Result (Node.js)'
+  jobs:
+  - job: BuildImage
+    displayName: 'Build result image'
+    steps:
+
+    - task: Bash@3
+      displayName: 'Build Docker image'
+      inputs:
+        targetType: inline
+        script: |
+          export DOCKER_BUILDKIT=1
+          docker build \
+            -f $(dockerfilePath) \
+            -t $(imageRepository):$(tag) \
+            -t $(imageRepository):latest \
+            ./result
+      env:
+        DOCKER_BUILDKIT: '1'
+
+    # Note: The result service Dockerfile uses tini as process manager.
+    # tini is installed inside the Dockerfile — no extra pipeline step needed.
+
+# ─────────────────────────────────────────────
+# STAGE 2: Push
+# ─────────────────────────────────────────────
+- stage: Push
+  displayName: 'Push Docker Image – Result'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: PushImage
+    displayName: 'Tag and push result image to ACR'
+    steps:
+
+    - task: Docker@2
+      displayName: 'Login to Azure Container Registry'
+      inputs:
+        command: login
+        containerRegistry: '<your-acr-service-connection>'
+
+    - task: Bash@3
+      displayName: 'Tag image for ACR'
+      inputs:
+        targetType: inline
+        script: |
+          docker tag $(imageRepository):$(tag) $(acrLoginServer)/$(imageRepository):$(tag)
+          docker tag $(imageRepository):latest $(acrLoginServer)/$(imageRepository):latest
+
+    - task: Docker@2
+      displayName: 'Push image to ACR'
+      inputs:
+        command: push
+        containerRegistry: '<your-acr-service-connection>'
+        repository: $(imageRepository)
+        tags: |
+          $(tag)
+          latest
