@@ -1,0 +1,91 @@
+# vote-pipeline.yml
+# CI/CD Pipeline for the Vote service (Python / Flask)
+# Builds a Docker image and pushes it to Azure Container Registry
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - vote/**
+
+pool:
+  name: self-hosted   # Self-hosted agent running on Ubuntu 24.04 Azure VM
+
+variables:
+  acrName: '<your-acr-name>'                          # e.g. asadulacr
+  acrLoginServer: '<your-acr-name>.azurecr.io'        # e.g. asadulacr.azurecr.io
+  imageRepository: 'vote'
+  dockerfilePath: 'vote/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+stages:
+
+# ─────────────────────────────────────────────
+# STAGE 1: Build
+# ─────────────────────────────────────────────
+- stage: Build
+  displayName: 'Build Docker Image – Vote (Python)'
+  jobs:
+  - job: BuildImage
+    displayName: 'Build vote image'
+    steps:
+
+    - task: Bash@3
+      displayName: 'Enable Docker BuildKit'
+      inputs:
+        targetType: inline
+        script: echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+      env:
+        DOCKER_BUILDKIT: '1'
+
+    - task: Bash@3
+      displayName: 'Build Docker image'
+      inputs:
+        targetType: inline
+        script: |
+          export DOCKER_BUILDKIT=1
+          docker build \
+            -f $(dockerfilePath) \
+            -t $(imageRepository):$(tag) \
+            -t $(imageRepository):latest \
+            ./vote
+      env:
+        DOCKER_BUILDKIT: '1'
+
+# ─────────────────────────────────────────────
+# STAGE 2: Push
+# ─────────────────────────────────────────────
+- stage: Push
+  displayName: 'Push Docker Image – Vote'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: PushImage
+    displayName: 'Tag and push vote image to ACR'
+    steps:
+
+    - task: Docker@2
+      displayName: 'Login to Azure Container Registry'
+      inputs:
+        command: login
+        containerRegistry: '<your-acr-service-connection>'   # Service connection name in Azure DevOps
+
+    - task: Bash@3
+      displayName: 'Tag image for ACR'
+      inputs:
+        targetType: inline
+        script: |
+          docker tag $(imageRepository):$(tag) $(acrLoginServer)/$(imageRepository):$(tag)
+          docker tag $(imageRepository):latest $(acrLoginServer)/$(imageRepository):latest
+
+    - task: Docker@2
+      displayName: 'Push image to ACR'
+      inputs:
+        command: push
+        containerRegistry: '<your-acr-service-connection>'
+        repository: $(imageRepository)
+        tags: |
+          $(tag)
+          latest
