@@ -1,79 +1,72 @@
-# 06 – CI/CD Pipelines (Azure DevOps)
+# 06 – CI/CD Pipelines (Azure DevOps + ArgoCD + AKS)
 
-This section documents the CI/CD pipelines I built in **Azure DevOps** for the classic [voting-app](https://github.com/dockersamples/example-voting-app) project — a multi-service application made up of three services written in different languages.
+This section documents the full CI/CD pipelines I built for the [voting-app](https://github.com/dockersamples/example-voting-app) project — a multi-service application with three services written in different languages, deployed to Kubernetes via GitOps.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Full Pipeline Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Azure DevOps Project                     │
-│                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ vote-pipeline│  │result-pipeline│  │ worker-pipeline  │  │
-│  │  (Python)    │  │  (Node.js)   │  │    (.NET)        │  │
-│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘  │
-│         │                 │                    │             │
-│         └─────────────────┴────────────────────┘            │
-│                           │                                 │
-│                    ┌──────▼───────┐                         │
-│                    │  Self-Hosted │                         │
-│                    │  Agent (VM)  │                         │
-│                    └──────┬───────┘                         │
-│                           │                                 │
-│                    ┌──────▼───────┐                         │
-│                    │    Azure     │                         │
-│                    │  Container   │                         │
-│                    │  Registry    │                         │
-│                    └──────────────┘                         │
-└─────────────────────────────────────────────────────────────┘
+Developer changes app.py (or any service file)
+                │
+                │ git push to main
+                ▼
+    ┌───────────────────────────────┐
+    │     Azure DevOps Pipeline     │
+    │                               │
+    │  Stage 1: Build               │
+    │    └── docker build image     │
+    │                               │
+    │  Stage 2: Push                │
+    │    └── push image to ACR      │
+    │                               │
+    │  Stage 3: Update Manifest     │
+    │    └── update-manifest.sh     │
+    │         └── updates image tag │
+    │              in k8s YAML      │
+    │              commits & pushes │
+    └───────────────────────────────┘
+                │
+                │ manifest change detected
+                ▼
+         ┌─────────────┐
+         │   ArgoCD    │  watches Azure Repos for manifest changes
+         │  (GitOps)   │  auto-syncs when tag is updated
+         └─────────────┘
+                │
+                │ deploy
+                ▼
+    ┌───────────────────────────────┐
+    │       AKS Cluster             │
+    │                               │
+    │  vote    result    worker     │
+    │  postgres          redis      │
+    │                               │
+    │  pods pull new image from ACR │
+    └───────────────────────────────┘
 ```
 
 ---
 
 ## 📦 Services & Pipelines
 
-| Service | Language | Pipeline File | Image Tag |
-|---------|----------|---------------|-----------|
-| vote | Python / Flask | `pipelines/vote-pipeline.yml` | `vote:latest` |
-| result | Node.js | `pipelines/result-pipeline.yml` | `result:latest` |
-| worker | .NET (C#) | `pipelines/worker-pipeline.yml` | `worker:latest` |
+| Service | Language | Pipeline File | Manifest File |
+|---------|----------|---------------|---------------|
+| vote | Python / Flask | `pipelines/vote-pipeline.yml` | `k8s/vote-deployment.yaml` |
+| result | Node.js | `pipelines/result-pipeline.yml` | `k8s/result-deployment.yaml` |
+| worker | .NET (C#) | `pipelines/worker-pipeline.yml` | `k8s/worker-deployment.yaml` |
 
 ---
 
-## 🔄 Pipeline Structure
+## 🔄 How It Works – Step by Step
 
-Each pipeline follows a **two-stage pattern**:
-
-```
-Stage 1: Build
-  └── Build Docker image using Dockerfile in the service folder
-  └── Tag image with build ID for traceability
-
-Stage 2: Push
-  └── Log in to Azure Container Registry (ACR)
-  └── Push tagged image to ACR
-```
-
----
-
-## 🛠️ Infrastructure
-
-- **Agent**: Self-hosted Azure DevOps agent running on an Ubuntu 24.04 Azure VM
-- **Registry**: Azure Container Registry (ACR)
-- **Source**: Azure Repos (Git)
-- **Build Engine**: Docker with BuildKit enabled (`DOCKER_BUILDKIT=1`)
-
----
-
-## ⚙️ Prerequisites
-
-1. Azure DevOps project and repository set up
-2. Self-hosted agent configured and running on a Linux VM
-3. Azure Container Registry created
-4. ACR service connection added in Azure DevOps
-5. Docker installed on the agent VM
+1. **Developer pushes a code change** (e.g. edits `vote/app.py`) to the `main` branch
+2. **Azure DevOps detects the change** via the `paths` trigger in the pipeline YAML
+3. **Stage 1 – Build**: Docker builds a new image with the updated code
+4. **Stage 2 – Push**: The new image is pushed to Azure Container Registry (ACR) tagged with the Build ID
+5. **Stage 3 – Update Manifest**: `update-manifest.sh` runs — it updates the image tag in the Kubernetes deployment YAML and pushes the change to Azure Repos
+6. **ArgoCD detects the manifest change** in Azure Repos and automatically syncs
+7. **AKS pulls the new image** from ACR and rolls out the updated pod
 
 ---
 
@@ -81,33 +74,60 @@ Stage 2: Push
 
 ```
 06-CI-CD-Pipelines/
-├── README.md                   ← You are here
+├── README.md                        ← You are here
+├── update-manifest.sh               ← Shell script used in Stage 3 to update k8s manifest
 ├── pipelines/
-│   ├── vote-pipeline.yml       ← Python/Flask service pipeline
-│   ├── result-pipeline.yml     ← Node.js service pipeline
-│   └── worker-pipeline.yml     ← .NET service pipeline
+│   ├── vote-pipeline.yml            ← Python/Flask — 3 stages: Build, Push, Update Manifest
+│   ├── result-pipeline.yml          ← Node.js — 3 stages: Build, Push, Update Manifest
+│   └── worker-pipeline.yml          ← .NET — 3 stages: Build, Push, Update Manifest
 └── docs/
-    └── troubleshooting.md      ← Real errors I hit and how I fixed them
+    └── troubleshooting.md           ← Real errors I hit and how I fixed them
 ```
 
 ---
 
-## 🔐 Secrets & Best Practices
+## ⚙️ Pipeline Trigger
 
-- ACR credentials are **never hardcoded** — stored as Azure DevOps service connections
-- No secrets in Dockerfiles or YAML files
-- Images tagged with `$(Build.BuildId)` for auditability alongside `latest`
+Each pipeline only triggers when files in its own service folder change:
+
+```yaml
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - vote/**      # Only triggers vote-pipeline when vote/ changes
+```
+
+This means changing `result/server.js` will NOT trigger the vote pipeline — only the result pipeline.
 
 ---
 
-## 📸 Key Learning Outcomes
+## 🛠️ Infrastructure
 
-- Writing multi-stage Azure DevOps YAML pipelines from scratch
-- Configuring and troubleshooting a self-hosted Linux agent
-- Using `docker buildx` and BuildKit for cross-platform image builds
-- Debugging real pipeline failures (agent timeouts, platform flags, .NET restore flags)
-- Pushing images to ACR using service connections
+- **Agent**: Self-hosted Azure DevOps agent on Ubuntu 24.04 Azure VM
+- **Registry**: Azure Container Registry (ACR)
+- **Source**: Azure Repos (Git)
+- **GitOps**: ArgoCD watching the k8s manifests repo
+- **Deployment**: Azure Kubernetes Service (AKS)
+- **Build Engine**: Docker with BuildKit + `docker buildx` (for .NET)
 
 ---
+
+## 🔐 Security
+
+- ACR credentials managed via Azure DevOps service connections — never hardcoded
+- Manifest repo access uses `$(System.AccessToken)` — built-in pipeline token
+- No secrets in Dockerfiles, shell scripts, or YAML files
+
+---
+
+## 📸 Result
+
+The app runs live on AKS — vote and result services accessible via NodePort:
+
+- Vote app: `http://<node-ip>:31000`
+- Result app: `http://<node-ip>:31001`
 
 *Part of my Azure DevOps learning portfolio — see the root README for the full picture.*

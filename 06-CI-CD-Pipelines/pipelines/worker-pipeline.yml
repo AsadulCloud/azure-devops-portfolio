@@ -1,10 +1,8 @@
 # worker-pipeline.yml
-# CI/CD Pipeline for the Worker service (.NET / C#)
-# Builds a Docker image and pushes it to Azure Container Registry
+# Full CI/CD Pipeline for the Worker service (.NET / C#)
 #
-# NOTE: This pipeline uses docker buildx for the .NET multi-stage build.
-# The --platform flag is passed to buildx, NOT to the standard docker build command,
-# because standard docker build does not support --platform without BuildKit.
+# CI:  Build Docker image → Push to ACR
+# CD:  Update image tag in k8s manifest → ArgoCD auto-syncs → Deploys to AKS
 
 trigger:
   branches:
@@ -23,6 +21,8 @@ variables:
   imageRepository: 'worker'
   dockerfilePath: 'worker/Dockerfile'
   tag: '$(Build.BuildId)'
+  manifestRepo: '<your-manifests-repo-name>'
+  manifestFile: 'k8s/worker-deployment.yaml'
 
 stages:
 
@@ -57,49 +57,84 @@ stages:
             -t $(imageRepository):latest \
             --load \
             ./worker
-      # --load exports the image to the local Docker daemon so we can push it in the next stage.
-      # Without --load, buildx only builds and discards the image.
       env:
         DOCKER_BUILDKIT: '1'
-
-    # ⚠️  KNOWN FIX: dotnet restore -a $TARGETARCH
-    # The original Dockerfile had: RUN dotnet restore -a $TARGETARCH
-    # This caused the error: "Invalid option -a" during the pipeline run.
-    # Fix: removed the -a $TARGETARCH flag entirely.
-    # Final working command inside Dockerfile: RUN dotnet restore
+      # Fix applied: removed -a $TARGETARCH from dotnet restore in Dockerfile
+      # Fix applied: using buildx with --load so image is available locally for push
 
 # ─────────────────────────────────────────────
 # STAGE 2: Push
 # ─────────────────────────────────────────────
 - stage: Push
-  displayName: 'Push Docker Image – Worker'
+  displayName: 'Push Docker Image to ACR'
   dependsOn: Build
   condition: succeeded()
   jobs:
   - job: PushImage
-    displayName: 'Tag and push worker image to ACR'
+    displayName: 'Push worker image to ACR'
     steps:
 
     - task: Docker@2
-      displayName: 'Login to Azure Container Registry'
+      displayName: 'Login to ACR'
       inputs:
         command: login
         containerRegistry: '<your-acr-service-connection>'
 
     - task: Bash@3
-      displayName: 'Tag image for ACR'
+      displayName: 'Tag and push image to ACR'
       inputs:
         targetType: inline
         script: |
           docker tag $(imageRepository):$(tag) $(acrLoginServer)/$(imageRepository):$(tag)
           docker tag $(imageRepository):latest $(acrLoginServer)/$(imageRepository):latest
+          docker push $(acrLoginServer)/$(imageRepository):$(tag)
+          docker push $(acrLoginServer)/$(imageRepository):latest
 
-    - task: Docker@2
-      displayName: 'Push image to ACR'
+# ─────────────────────────────────────────────
+# STAGE 3: Update Manifest (CD - GitOps)
+# ─────────────────────────────────────────────
+- stage: UpdateManifest
+  displayName: 'Update k8s Manifest – Trigger ArgoCD'
+  dependsOn: Push
+  condition: succeeded()
+  jobs:
+  - job: UpdateTag
+    displayName: 'Update image tag in k8s manifest'
+    steps:
+
+    - task: Bash@3
+      displayName: 'Configure git'
       inputs:
-        command: push
-        containerRegistry: '<your-acr-service-connection>'
-        repository: $(imageRepository)
-        tags: |
-          $(tag)
-          latest
+        targetType: inline
+        script: |
+          git config --global user.email "pipeline@azuredevops.com"
+          git config --global user.name "Azure Pipeline"
+
+    - task: Bash@3
+      displayName: 'Clone manifests repo'
+      inputs:
+        targetType: inline
+        script: |
+          git clone https://$(System.AccessToken)@dev.azure.com/<your-org>/<your-project>/_git/$(manifestRepo) manifests
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+    - task: Bash@3
+      displayName: 'Update image tag in deployment manifest'
+      inputs:
+        targetType: inline
+        script: |
+          cd manifests
+          sed -i "s|$(acrLoginServer)/$(imageRepository):.*|$(acrLoginServer)/$(imageRepository):$(tag)|g" $(manifestFile)
+          echo "Updated manifest:"
+          cat $(manifestFile)
+
+    - task: Bash@3
+      displayName: 'Commit and push updated manifest'
+      inputs:
+        targetType: inline
+        script: |
+          cd manifests
+          git add $(manifestFile)
+          git commit -m "Update worker image tag to $(tag) [skip ci]"
+          git push
