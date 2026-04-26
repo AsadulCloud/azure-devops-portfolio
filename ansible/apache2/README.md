@@ -1,38 +1,48 @@
-Role Name
-=========
+# apache2
 
-A brief description of the role goes here.
+An Ansible role that installs and configures the Apache2 web server on Ubuntu/Debian systems.
 
-Requirements
-------------
+## Requirements
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+- Target hosts must be running Ubuntu or Debian
+- Python must be installed on target hosts (required by Ansible)
+- SSH access to target hosts
 
-Role Variables
---------------
+## Role Variables
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+Variables are defined in `defaults/main.yml` and can be overridden:
 
-Dependencies
-------------
+| Variable | Default | Description |
+|---|---|---|
+| `apache2_port` | `80` | Port Apache listens on |
+| `apache2_doc_root` | `/var/www/html` | Document root directory |
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+## Dependencies
 
-Example Playbook
-----------------
+None.
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+## Example Playbook
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+```yaml
+- hosts: webservers
+  become: true
+  roles:
+    - role: apache2
+```
 
-License
--------
+## What This Role Does
 
-BSD
+1. Installs Apache2 package
+2. Deploys a custom `index.html` via the `files/` directory
+3. Ensures the Apache2 service is started and enabled on boot
+4. Uses handlers to restart Apache2 when configuration changes
 
-Author Information
-------------------
+## License
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+MIT
+
+## Author
+
+**Md Asadul Howlader**  
+Cloud & DevOps Engineer (Azure)  
+GitHub: [AsadulCloud](https://github.com/AsadulCloud)
