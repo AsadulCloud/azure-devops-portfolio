@@ -125,9 +125,20 @@ This means changing `result/server.js` will NOT trigger the vote pipeline — on
 
 ## 📸 Result
 
-The app runs live on AKS — vote and result services accessible via NodePort:
+> Infrastructure runs on Azure pay-as-you-go. The AKS cluster and agent VM are stopped when not in use to save costs. Screenshots below show the live deployment during active use.
 
-- Vote app: `http://<node-ip>:31000`
-- Result app: `http://<node-ip>:31001`
+### Pipeline — All 3 Stages Passed
+![Pipeline Success](docs/pipeline-success.png)
 
+### ArgoCD — Application Healthy & Synced
+![ArgoCD Healthy](docs/argocd-healthy.png)
+
+### Pods Running on AKS
+![kubectl pods](docs/kubectl-pods.png)
+
+### Images in Azure Container Registry
+![ACR Images](docs/acr-images.png)
+
+### AKS Cluster
+![AKS Cluster](docs/aks-cluster.png)
 *Part of my Azure DevOps learning portfolio — see the root README for the full picture.*
