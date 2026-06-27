@@ -1,0 +1,7 @@
+cat > .gitignore << 'EOF'
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.png
+*.jpg
+EOF
