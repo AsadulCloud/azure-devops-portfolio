@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asadul Cloud Portfolio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 90%;
+      text-align: center;
+      padding: 60px 40px;
+      background: #111;
+      border-radius: 16px;
+      border: 1px solid #222;
+      box-shadow: 0 0 60px rgba(0, 120, 212, 0.15);
+    }
+
+    .badge {
+      display: inline-block;
+      background: #0078d4;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+
+    h1 span {
+      color: #0078d4;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 40px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 40px;
+      text-align: left;
+    }
+
+    .info-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .info-card .label {
+      font-size: 11px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 15px;
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    .info-card .value.highlight {
+      color: #0078d4;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #222;
+      margin: 32px 0;
+    }
+
+    .stack-title {
+      font-size: 13px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .tag {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #aaa;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 6px;
+    }
+
+    .tag.active {
+      border-color: #0078d4;
+      color: #0078d4;
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .footer span {
+      color: #0078d4;
+    }
+
+    .identity-note {
+      margin-top: 24px;
+      background: #0d1f33;
+      border: 1px solid #0078d4;
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: #7ab8f5;
+      text-align: left;
+    }
+
+    .identity-note strong {
+      color: #0078d4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="badge">🔐 Accessed via Managed Identity</div>
+
+    <h1>Md <span>Asadul</span> Howlader</h1>
+    <p class="subtitle">Junior Azure DevOps Engineer — Lisbon, Portugal</p>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="label">Hosted On</div>
+        <div class="value highlight">Azure Blob Storage</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Accessed From</div>
+        <div class="value highlight">Azure VM</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Authentication</div>
+        <div class="value highlight">Managed Identity</div>
+      </div>
+      <div class="info-card">
+        <div class="label">No Credentials Used</div>
+        <div class="value highlight">Zero Secrets ✅</div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <p class="stack-title">Tech Stack</p>
+    <div class="tags">
+      <span class="tag active">Terraform</span>
+      <span class="tag active">Azure DevOps</span>
+      <span class="tag active">AKS</span>
+      <span class="tag active">Docker</span>
+      <span class="tag active">ArgoCD</span>
+      <span class="tag active">Ansible</span>
+      <span class="tag">AZ-900 (In Progress)</span>
+      <span class="tag">AZ-104 (Planned)</span>
+      <span class="tag">AZ-400 (Planned)</span>
+    </div>
+
+    <div class="identity-note">
+      <strong>🔒 How this works:</strong><br/>
+      This file is stored in Azure Blob Storage. The VM accessing it has a 
+      <strong>System-Assigned Managed Identity</strong> with 
+      <strong>Storage Blob Data Reader</strong> role. No passwords, 
+      no keys, no secrets — pure identity-based access.
+    </div>
+
+    <div class="footer">
+      <p>github.com/AsadulCloud &nbsp;•&nbsp; <span>Built with Terraform & Azure</span></p>
+    </div>
+
+  </div>
+</body>
+</html>
