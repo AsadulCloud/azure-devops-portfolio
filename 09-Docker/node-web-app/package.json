@@ -1,12 +1,17 @@
 {
   "name": "node-web-app",
   "version": "1.0.0",
-  "description": "Simple Node.js Express app for Docker practice",
-  "main": "app.js",
+  "main": "dist/app.js",
   "scripts": {
-    "start": "node app.js"
+    "build": "tsc",
+    "start": "node dist/app.js"
   },
   "dependencies": {
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.7"
   }
 }
