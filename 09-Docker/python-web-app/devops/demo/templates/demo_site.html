@@ -1,66 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>CSS Template</title>
+<title>Md Asadul Howlader | Azure DevOps Portfolio</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 * {
   box-sizing: border-box;
 }
-
 body {
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
 }
-
 /* Style the header */
 header {
-  background-color: #666;
+  background-color: #1b2733;
   padding: 30px;
   text-align: center;
   font-size: 35px;
-  color: yellow;
+  color: #40c4ff;
 }
-
+header p {
+  font-size: 16px;
+  color: #ccc;
+  margin-top: 8px;
+}
 /* Create two columns/boxes that floats next to each other */
 nav {
   float: left;
   width: 30%;
-  height: 300px; /* only for demonstration, should be removed */
-  background: #ccc;
+  min-height: 400px;
+  background: #eef2f5;
   padding: 20px;
 }
-
 /* Style the list inside the menu */
 nav ul {
   list-style-type: none;
   padding: 0;
 }
-
+nav li {
+  margin-bottom: 14px;
+}
+nav a {
+  text-decoration: none;
+  color: #1b2733;
+  font-weight: bold;
+}
+nav a:hover {
+  color: #0077cc;
+}
+nav h3 {
+  color: #1b2733;
+  border-bottom: 2px solid #40c4ff;
+  padding-bottom: 6px;
+}
 article {
   float: left;
-  padding: 20px;
+  padding: 20px 30px;
   width: 70%;
-  background-color: #f1f1f1;
-  height: 300px; /* only for demonstration, should be removed */
+  background-color: #ffffff;
+  min-height: 400px;
 }
-
+article h1 {
+  color: #1b2733;
+}
+article h2 {
+  color: #0077cc;
+  margin-top: 30px;
+}
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+.skills-list li {
+  background: #eef2f5;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #1b2733;
+}
+.project-box {
+  border-left: 4px solid #40c4ff;
+  background: #f9fbfc;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
 /* Clear floats after the columns */
 section::after {
   content: "";
   display: table;
   clear: both;
 }
-
 /* Style the footer */
 footer {
-  background-color: #777;
-  padding: 10px;
+  background-color: #1b2733;
+  padding: 15px;
   text-align: center;
-  color: yellow;
+  color: #40c4ff;
+  font-size: 14px;
 }
-
-/* Responsive layout - makes the two columns/boxes stack on top of each other instead of next to each other, on small screens */
+/* Responsive layout */
 @media (max-width: 600px) {
   nav, article {
     width: 100%;
@@ -70,32 +112,64 @@ footer {
 </style>
 </head>
 <body>
-
-
 <header>
-  <h2>Free DevOps Course By Abhishek</h2>
+  <h2>Md Asadul Howlader</h2>
+  <p>Junior Azure DevOps Engineer | Cloud &amp; CI/CD Enthusiast | Lisbon, Portugal</p>
 </header>
-
 <section>
   <nav>
+    <h3>Connect</h3>
     <ul>
-      <li><a href="www.youtube.com/@AbhishekVeeramalla">YouTube</a></li>
-      <li><a href="www.linkedin.com/in/abhishek-veeramalla-77b33996/">LinkedIn</a></li>
-      <li><a href="https://telegram.me/abhishekveeramalla">Telegram</a></li>
+      <li><a href="https://github.com/AsadulCloud/azure-devops-portfolio" target="_blank">GitHub Portfolio</a></li>
+      <li><a href="https://hub.docker.com/u/asadulcloud" target="_blank">Docker Hub</a></li>
+      <li><a href="mailto:mdhow0007@gmail.com">Email</a></li>
+      <li><a href="tel:+351917970324">+351 917 970 324</a></li>
+    </ul>
+    <h3>Certifications in Progress</h3>
+    <ul>
+      <li>AZ-900 (Studying)</li>
+      <li>AZ-104 (Planned)</li>
+      <li>AZ-400 (Planned)</li>
     </ul>
   </nav>
-  
+
   <article>
-    <h1>Agenda</h1>
-    <p>Learn DevOps with strong foundational knowledge and practical understanding</p>
-    <p>Please Share the Channel with your friends and colleagues</p>
+    <h1>About Me</h1>
+    <p>Self-taught Azure DevOps engineer based in Lisbon, transitioning into cloud engineering from a background in Civil Engineering (BSc, CGPA 3.87). Passionate about building real-world CI/CD pipelines, Infrastructure as Code, and container orchestration on Azure.</p>
+
+    <h2>Skills</h2>
+    <ul class="skills-list">
+      <li>Azure DevOps</li>
+      <li>Terraform</li>
+      <li>Docker</li>
+      <li>Kubernetes (AKS)</li>
+      <li>ArgoCD / GitOps</li>
+      <li>Ansible</li>
+      <li>Git &amp; GitHub</li>
+      <li>Jenkins</li>
+      <li>Azure Networking (VNet, NSG, Firewall)</li>
+      <li>Linux / WSL</li>
+    </ul>
+
+    <h2>Featured Projects</h2>
+    <div class="project-box">
+      <strong>Voting App CI/CD Pipeline</strong><br>
+      Multi-service microservices app (vote, result, worker) deployed via Azure DevOps pipelines to AKS with ArgoCD GitOps, ACR image builds, and full green pipeline status.
+    </div>
+    <div class="project-box">
+      <strong>Terraform AKS Infrastructure</strong><br>
+      Advanced AKS + ACR + CI/CD project provisioned entirely with Terraform, including remote state management in Azure Blob Storage.
+    </div>
+    <div class="project-box">
+      <strong>Ansible Multi-VM Automation</strong><br>
+      Automated nginx and apache2 deployment across two Azure VMs using custom playbooks and SSH key authentication.
+    </div>
+
+    <p>Please check out my GitHub portfolio for full project code and documentation.</p>
   </article>
 </section>
-
 <footer>
-  <p>@AbhishekVeeramalla</p>
+  <p>&copy; Md Asadul Howlader | Lisbon, Portugal</p>
 </footer>
-
 </body>
 </html>
-
