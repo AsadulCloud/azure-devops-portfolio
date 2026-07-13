@@ -38,7 +38,10 @@ resource "azurerm_kubernetes_cluster" "main" {
     name                = "${var.project_name}-aks"
     location            = azurerm_resource_group.main.location
     resource_group_name = azurerm_resource_group.main.name
+    dns_prefix          = "${var.project_name}-aks"
     kubernetes_version = var.aks_kubernetes_version
+
+oidc_issuer_enabled = true
     default_node_pool {
         name                = "default"
         node_count          = var.aks_node_count
@@ -53,6 +56,8 @@ resource "azurerm_kubernetes_cluster" "main" {
     network_profile {
         network_plugin    = "azure"
         load_balancer_sku = "standard"
+        service_cidr      = "10.2.0.0/16"
+        dns_service_ip    = "10.2.0.10"
     }
 }
 # --------------------------------------------------------------------------------------------
@@ -62,6 +67,6 @@ resource "azurerm_kubernetes_cluster" "main" {
 resource "azurerm_role_assignment" "aks_acr_pull" {
     scope                = azurerm_container_registry.main.id
     role_definition_name = "AcrPull"
-    principal_id         = azurerm_kubernetes_cluster.main.identity[0].principal_id
+    principal_id         = azurerm_kubernetes_cluster.main.kubelet_identity[0].object_id
     skip_service_principal_aad_check = true
 }   
