@@ -1,0 +1,94 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  # --- Set these up in your Azure DevOps project first ---
+  # Service connection to your Azure subscription (Project Settings > Service connections)
+  azureSubscription: 'your-azure-service-connection-name'
+  # ACR name (must match terraform's "acr_login_server" output, without ".azurecr.io")
+  acrName: 'asadulcicdacr'
+  acrLoginServer: 'asadulcicdacr.azurecr.io'
+  imageName: 'aks-cicd-app'
+  # AKS cluster + resource group (must match terraform outputs)
+  aksClusterName: 'asadulcicd-aks'
+  aksResourceGroup: 'asadulcicd-rg'
+  # Use the pipeline's own build ID as a unique, traceable image tag
+  imageTag: '$(Build.BuildId)'
+
+stages:
+
+  # -------------------------------------------------------------------------
+  # STAGE 1: CI - Build the Docker image and push it to ACR
+  # -------------------------------------------------------------------------
+  - stage: Build
+    displayName: 'Build and Push Image'
+    jobs:
+      - job: BuildAndPush
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: Docker@2
+            displayName: 'Build and push image to ACR'
+            inputs:
+              containerRegistry: '$(acrName)'   # this must match an ACR service connection name
+              repository: '$(imageName)'
+              command: 'buildAndPush'
+              Dockerfile: 'app/Dockerfile'
+              buildContext: 'app'
+              tags: |
+                $(imageTag)
+                latest
+
+  # -------------------------------------------------------------------------
+  # STAGE 2: CD - Deploy the new image to AKS
+  # -------------------------------------------------------------------------
+  - stage: Deploy
+    displayName: 'Deploy to AKS'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: DeployToAKS
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Get AKS credentials'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+          - task: Bash@3
+            displayName: 'Replace image tag in manifest'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sed -i "s|ACR_LOGIN_SERVER/aks-cicd-app:latest|$(acrLoginServer)/$(imageName):$(imageTag)|g" k8s/deployment.yaml
+                cat k8s/deployment.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Apply Deployment manifest'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(azureSubscription)'
+              azureResourceGroup: '$(aksResourceGroup)'
+              kubernetesCluster: '$(aksClusterName)'
+              command: 'apply'
+              arguments: '-f k8s/deployment.yaml'
+
+          - task: Kubernetes@1
+            displayName: 'Apply Service manifest'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(azureSubscription)'
+              azureResourceGroup: '$(aksResourceGroup)'
+              kubernetesCluster: '$(aksClusterName)'
+              command: 'apply'
+              arguments: '-f k8s/service.yaml'
