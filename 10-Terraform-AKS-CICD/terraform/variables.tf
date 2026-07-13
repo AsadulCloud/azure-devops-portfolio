@@ -31,7 +31,7 @@ variable "aks_node_count" {
 variable "aks_node_vm_size" {
     description = "VM size for the AKS node pool"
     type        = string
-    default     = "Standard_DS2_v2"
+    default     = "Standard_DS2_v3"
 }
 variable "aks_kubernetes_version" {
     description = "Kubernetes version for the AKS cluster"
