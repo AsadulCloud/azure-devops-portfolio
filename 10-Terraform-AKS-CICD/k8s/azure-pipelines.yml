@@ -35,7 +35,7 @@ stages:
               containerRegistry: '$(acrName)'   # this must match an ACR service connection name
               repository: '$(imageName)'
               command: 'buildAndPush'
-              Dockerfile: 'app/Dockerfile'
+              Dockerfile: 'dockerfile: 10-Terraform-AKS-CICD/app/Dockerfile'
               buildContext: 'app'
               tags: |
                 $(imageTag)
