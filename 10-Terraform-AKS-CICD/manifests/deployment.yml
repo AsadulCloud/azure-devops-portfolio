@@ -18,7 +18,7 @@ spec:
         - name: aks-cicd-app
           # This image tag gets replaced automatically by the pipeline
           # with the ACR login server + build ID - see azure-pipelines.yml
-          image: asadulcicdacr.azurecr.io/aks-cicd-app:latest
+          image: asadulcicdacr.azurecr.io/akscicdapp:latest
           ports:
             - containerPort: 3000
           resources:
