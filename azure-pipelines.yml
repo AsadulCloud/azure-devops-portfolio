@@ -20,7 +20,7 @@ variables:
   dockerRegistryServiceConnection: '90b9233c-857f-4fdb-81c5-29927d6fbd49'
   imageRepository: 'akscicdapp'
   containerRegistry: 'asadulcicdacr.azurecr.io'
-  dockerfilePath: '**/Dockerfile'
+  dockerfilePath: '10-Terraform-AKS-CICD/app/Dockerfile'
   tag: '$(Build.BuildId)'
   imagePullSecret: 'asadulcicdacr12182c30-auth'
 
