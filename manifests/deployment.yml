@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: akscicdapp 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: akscicdapp
+  template:
+    metadata:
+      labels:
+        app: akscicdapp 
+    spec:
+      containers:
+        - name: akscicdapp 
+          image: asadulcicdacr.azurecr.io/akscicdapp
+          ports:
+          - containerPort: 80
