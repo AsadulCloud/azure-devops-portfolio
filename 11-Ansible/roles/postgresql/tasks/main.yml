@@ -1,0 +1,21 @@
+---
+# tasks file for roles/postgresql
+- name: Install PostgreSQL
+  apt:
+    name: postgresql
+    state: present
+    update_cache: yes
+
+- name: Start and enable PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: yes 
+
+- name: Create a backup directory for PostgreSQL
+  file:
+    path: "{{ postgres_db_backup_path }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0750'

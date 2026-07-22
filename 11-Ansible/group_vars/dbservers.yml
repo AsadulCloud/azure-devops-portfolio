@@ -1,0 +1,3 @@
+---
+postgres_db_name: my_postgres_db
+postgres_db_backup_path: /data/backups

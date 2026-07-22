@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Task Manager - Microservices Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; background: #f5f7fa; }
+  h1 { color: #1b2733; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  input[type=text] { width: 70%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+  button { padding: 8px 16px; background: #0077cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #005fa3; }
+  .task { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+  .task.completed .title { text-decoration: line-through; color: #999; }
+  .notif { font-size: 13px; color: #555; padding: 4px 0; }
+  .badge { background: #eef2f5; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <p>Frontend → API Service → Redis pub/sub → Notification Service</p>
+
+  <div class="card">
+    <h3>Add a task</h3>
+    <input type="text" id="taskTitle" placeholder="Task title">
+    <button onclick="addTask()">Add</button>
+  </div>
+
+  <div class="card">
+    <h3>Tasks</h3>
+    <div id="taskList"></div>
+  </div>
+
+  <div class="card">
+    <h3>Notifications <span class="badge">from notification-service</span></h3>
+    <div id="notifList"></div>
+  </div>
+
+<script>
+  // Adjust these if your services are exposed at different paths/ports
+  const API_BASE = '/api-service';
+  const NOTIF_BASE = '/notification-service';
+
+  async function loadTasks() {
+    const res = await fetch(`${API_BASE}/api/tasks`);
+    const tasks = await res.json();
+    const list = document.getElementById('taskList');
+    list.innerHTML = tasks.map(t => `
+      <div class="task ${t.status === 'completed' ? 'completed' : ''}">
+        <span class="title">${t.title}</span>
+        ${t.status !== 'completed' ? `<button onclick="completeTask(${t.id})">Complete</button>` : '<span class="badge">done</span>'}
+      </div>
+    `).join('') || '<p>No tasks yet.</p>';
+  }
+
+  async function loadNotifications() {
+    const res = await fetch(`${NOTIF_BASE}/api/notifications`);
+    const notifs = await res.json();
+    const list = document.getElementById('notifList');
+    list.innerHTML = notifs.slice().reverse().map(n => `
+      <div class="notif">🔔 ${n.notification}</div>
+    `).join('') || '<p>No notifications yet.</p>';
+  }
+
+  async function addTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    if (!title) return;
+    await fetch(`${API_BASE}/api/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    document.getElementById('taskTitle').value = '';
+    refresh();
+  }
+
+  async function completeTask(id) {
+    await fetch(`${API_BASE}/api/tasks/${id}/complete`, { method: 'PATCH' });
+    refresh();
+  }
+
+  function refresh() {
+    loadTasks();
+    loadNotifications();
+  }
+
+  refresh();
+  setInterval(refresh, 3000); // poll every 3s so notifications show up without manual refresh
+</script>
+</body>
+</html>
