@@ -1,0 +1,26 @@
+---
+- name: Install and configure PostgreSQL
+  hosts: dbservers
+  become: yes
+
+
+  tasks:
+  - name: Install PostgreSQL
+    apt:
+      name: postgresql
+      state: present
+      update_cache: yes
+
+  - name: Start and enable PostgreSQL
+    service:
+      name: postgresql
+      state: started
+      enabled: yes
+
+  - name: Create a backup directory for PostgreSQL
+    file:
+      path: /data/backups
+      state: directory
+      owner: postgres
+      group: postgres
+      mode: '0750'

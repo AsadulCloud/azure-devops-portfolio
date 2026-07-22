@@ -1,0 +1,25 @@
+---
+- name: Install and configure Nginx
+  hosts: webservers
+  become: yes
+
+  tasks:
+  - name: Install nginx
+    apt:
+      name: nginx
+      state: present
+      update_cache: yes
+
+  - name: Start and enable nginx service
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+
+  - name: Deploy custom index page
+    copy:
+      src: files/index.html
+      dest: /var/www/html/index.html
+      owner: www-data
+      group: www-data
+      mode: '0644'
