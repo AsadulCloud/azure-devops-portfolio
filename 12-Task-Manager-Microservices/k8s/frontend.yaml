@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ACR_LOGIN_SERVER/task-manager-frontend:latest
+          image: asadulcicdacr.azurecr.io/task-manager-frontend:latest
           ports:
             - containerPort: 80
 ---
