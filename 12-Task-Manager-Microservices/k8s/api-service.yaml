@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api-service
-          image: ACR_LOGIN_SERVER/task-manager-api:latest
+          image: asadulcicdacr.azurecr.io/task-manager-api:latest
           ports:
             - containerPort: 4000
           env:
