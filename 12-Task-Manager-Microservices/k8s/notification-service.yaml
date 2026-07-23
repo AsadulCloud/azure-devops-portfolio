@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: ACR_LOGIN_SERVER/task-manager-notification:latest
+          image: asadulcicdacr.azurecr.io/task-manager-notification:latest
           ports:
             - containerPort: 5000
           env:
