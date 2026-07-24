@@ -3,6 +3,10 @@ trigger:
     include:
       - main
 
+  paths:
+     include:
+       - 10-Terraform-AKS-CICD/*
+
 variables:
   # --- Set these up in your Azure DevOps project first ---
   # Service connection to your Azure subscription (Project Settings > Service connections)
