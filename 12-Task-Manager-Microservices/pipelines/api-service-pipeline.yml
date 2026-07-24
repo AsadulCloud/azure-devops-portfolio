@@ -72,6 +72,7 @@ stages:
                   displayName: Deploy api-service
                   inputs:
                     action: deploy
+                    kubernetesServiceConnection: 'task-manager-asadulcicd-aks-task-manager-1784884434412'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/api-service.yaml
                     imagePullSecrets: |
