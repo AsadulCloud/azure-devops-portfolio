@@ -1,0 +1,87 @@
+# frontend pipeline - builds, pushes, and deploys ONLY frontend.
+# Triggers only when frontend's code or its own manifest changes.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 12-Task-Manager-Microservices/frontend/*
+      - 12-Task-Manager-Microservices/k8s/frontend.yaml
+
+resources:
+  - repo: self
+
+variables:
+  acrServiceConnection: 'acr-connection'
+  azureSubscription: 'azure-subscription-connection'
+  acrLoginServer: 'asadulcicdacr.azurecr.io'
+  aksClusterName: 'asadulcicd-aks'
+  aksResourceGroup: 'asadulcicd-rg'
+  namespace: 'task-manager'
+  imageTag: '$(Build.BuildId)'
+  vmImageName: 'ubuntu-latest'
+
+stages:
+
+  - stage: Build
+    displayName: 'Build and Push frontend'
+    jobs:
+      - job: BuildAndPush
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: Docker@2
+            displayName: 'Build and push frontend image'
+            inputs:
+              containerRegistry: '$(acrServiceConnection)'
+              repository: 'task-manager-frontend'
+              command: 'buildAndPush'
+              Dockerfile: '12-Task-Manager-Microservices/frontend/Dockerfile'
+              buildContext: '12-Task-Manager-Microservices/frontend'
+              tags: |
+                $(imageTag)
+                latest
+
+  - stage: Deploy
+    displayName: 'Deploy frontend to AKS'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: DeployToAKS
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Get AKS credentials'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+                kubectl create namespace $(namespace) --dry-run=client -o yaml | kubectl apply -f -
+
+          - task: Bash@3
+            displayName: 'Replace image tag in manifest'
+            inputs:
+              targetType: 'inline'
+              script: |
+                cd 12-Task-Manager-Microservices/k8s
+                sed -i "s|ACR_LOGIN_SERVER/task-manager-frontend:latest|$(acrLoginServer)/task-manager-frontend:$(imageTag)|g" frontend.yaml
+                cat frontend.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Apply frontend manifest'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(azureSubscription)'
+              azureResourceGroup: '$(aksResourceGroup)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(namespace)'
+              command: 'apply'
+              arguments: '-f 12-Task-Manager-Microservices/k8s/frontend.yaml'
