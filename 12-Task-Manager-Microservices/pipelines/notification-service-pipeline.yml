@@ -64,11 +64,13 @@ stages:
                     action: createSecret
                     secretName: $(imagePullSecret)
                     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+                    kubernetesServiceConnection: 'task-manager-asadulcicd-aks-task-manager-1784884434412'
 
                 - task: KubernetesManifest@0
                   displayName: Deploy notification-service
                   inputs:
                     action: deploy
+                    kubernetesServiceConnection: 'task-manager-asadulcicd-aks-task-manager-1784884434412'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/notification-service.yaml
                     imagePullSecrets: |
