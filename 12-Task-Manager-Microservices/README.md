@@ -2,9 +2,17 @@
 
 A 3-microservice application demonstrating **asynchronous, event-driven
 communication** between services — a different pattern from the direct
-request/response style used in the voting app project.
+request/response style used in the voting app project. Deployed to AKS
+with three independent CI/CD pipelines (one per service), and proven
+locally end-to-end before ever touching Kubernetes.
 
 ## Architecture
+
+![Task Manager architecture diagram](docs/architecture-diagram.png)
+
+*(Browser → Frontend (public) → api-service / notification-service
+(internal) → Redis pub/sub, connecting the two backend services
+asynchronously.)*
 
 ```
 Browser
@@ -89,12 +97,71 @@ update within a few seconds — that's the pub/sub message actually
 travelling from `api-service` → Redis → `notification-service` → back to
 the browser via polling.
 
+## CI/CD
+
+Three independent Azure DevOps pipelines, one per microservice, each
+triggered only by changes to its own folder — matching the same
+per-service pattern used in the voting app project:
+
+```
+pipelines/api-service-pipeline.yml           → triggers on api-service/*
+pipelines/notification-service-pipeline.yml  → triggers on notification-service/*
+pipelines/frontend-pipeline.yml              → triggers on frontend/*
+```
+
+Each pipeline: builds and pushes its image to ACR, then deploys via
+`KubernetesManifest@0` to the `task-manager` namespace using an
+environment-linked Kubernetes service connection. Redis has no pipeline —
+it's applied once manually, since it's an off-the-shelf image with no
+source code to build.
+
+## Real problems solved
+
+**nginx couldn't resolve sibling containers by name.** Testing the full
+stack locally in Docker, `frontend`'s nginx failed at startup with
+`host not found in upstream "api-service"`. Root cause: containers on
+Docker's default bridge network can only reach each other by IP, not by
+name — there's no automatic name resolution. Fixed by creating a custom
+Docker network (`docker network create`) and running all containers on
+it, which gives each container name-based DNS automatically — the same
+mechanism Kubernetes Services provide cluster-wide, for free. Catching
+this locally, in minutes, avoided a much harder debugging session inside
+Kubernetes later.
+
+**Public IP quota exhausted again.** `frontend-service`'s LoadBalancer
+stayed `<pending>` indefinitely. Traced with `az network public-ip list`
+to the same 3-IPs-per-subscription/region ceiling hit on the previous
+project — an old, still-running service from that earlier project (in a
+different namespace, on the same shared cluster) was quietly holding one
+of the three available IPs. Fixed by deleting the unused old service to
+free the IP. Longer-term fix (not yet implemented): an Ingress Controller,
+so multiple apps on this cluster share one public IP instead of each
+grabbing its own.
+
+**`KubernetesManifest@0` needed explicit service connection.** The pipeline
+task failed with `Input required: kubernetesServiceConnection` on both
+the secret-creation and deploy steps — the `environment:` field alone
+does not automatically supply this to either task, contrary to
+expectation. Fixed by adding `kubernetesServiceConnection:` explicitly to
+both `KubernetesManifest@0` steps in all three pipelines.
+
+## Runbook
+
+If notifications stop appearing after adding a task:
+1. `kubectl logs deployment/notification-service -n task-manager` — check
+   for connection errors to Redis
+2. Confirm Redis itself is healthy: `kubectl get pods -n task-manager`,
+   then `kubectl exec -it <redis-pod> -n task-manager -- redis-cli ping`
+   (should return `PONG`)
+3. If api-service's task creation still works but no notification appears,
+   check `kubectl logs deployment/api-service -n task-manager` for a
+   failed Redis publish
+
 ## Next steps (optional extensions)
 
-- Wire this into a CI/CD pipeline, reusing the pattern from
-  `10-Terraform-AKS-CICD` — one pipeline building and pushing all three
-  images, then applying all four manifests
 - Add a database (Postgres) so tasks persist across pod restarts, instead
   of the current in-memory array
 - Swap Redis pub/sub for Azure Service Bus or RabbitMQ, to see the same
   pattern with a production-grade message broker
+- Add an Ingress Controller to share one public IP across multiple
+  projects on this cluster, instead of each grabbing its own LoadBalancer
