@@ -1,0 +1,57 @@
+<svg width="680" height="400" viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Task Manager microservices architecture</title>
+<desc>Browser connects to the Frontend, the only public-facing service. Frontend routes requests to api-service and notification-service internally. api-service publishes events to Redis, which notification-service subscribes to.</desc>
+
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M2 1L8 5L2 9" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<style>
+  .th { font: 600 15px Arial, sans-serif; fill: #1b2733; }
+  .ts { font: 400 12px Arial, sans-serif; fill: #444; }
+  .box { stroke-width: 1; }
+  .arr { stroke: #444; stroke-width: 1.5; fill: none; }
+  .c-gray { fill: #eef0f2; stroke: #c7cdd3; }
+  .c-teal { fill: #d9f2ef; stroke: #7fc9c0; }
+  .c-purple { fill: #ece7f7; stroke: #b3a3e0; }
+  .c-coral { fill: #fbe6e2; stroke: #e6a396; }
+</style>
+
+<line x1="340" y1="84" x2="340" y2="178" class="arr" marker-end="url(#arrow)"/>
+<line x1="300" y1="236" x2="150" y2="298" class="arr" marker-end="url(#arrow)"/>
+<line x1="380" y1="236" x2="524" y2="298" class="arr" marker-end="url(#arrow)"/>
+<line x1="245" y1="328" x2="261" y2="328" class="arr" marker-end="url(#arrow)"/>
+<line x1="405" y1="328" x2="421" y2="328" class="arr" marker-end="url(#arrow)"/>
+
+<g>
+<rect x="270" y="40" width="140" height="44" rx="8" class="box c-gray"/>
+<text class="th" x="340" y="66" text-anchor="middle">Browser</text>
+</g>
+
+<g>
+<rect x="240" y="180" width="200" height="56" rx="8" class="box c-teal"/>
+<text class="th" x="340" y="203" text-anchor="middle">Frontend</text>
+<text class="ts" x="340" y="222" text-anchor="middle">LoadBalancer (public)</text>
+</g>
+
+<g>
+<rect x="53" y="300" width="190" height="56" rx="8" class="box c-purple"/>
+<text class="th" x="148" y="323" text-anchor="middle">api-service</text>
+<text class="ts" x="148" y="342" text-anchor="middle">Internal only</text>
+</g>
+
+<g>
+<rect x="263" y="300" width="140" height="56" rx="8" class="box c-coral"/>
+<text class="th" x="333" y="323" text-anchor="middle">Redis</text>
+<text class="ts" x="333" y="342" text-anchor="middle">pub/sub broker</text>
+</g>
+
+<g>
+<rect x="423" y="300" width="205" height="56" rx="8" class="box c-purple"/>
+<text class="th" x="525" y="323" text-anchor="middle">notification-service</text>
+<text class="ts" x="525" y="342" text-anchor="middle">Internal only</text>
+</g>
+
+</svg>
