@@ -8,7 +8,7 @@ locally end-to-end before ever touching Kubernetes.
 
 ## Architecture
 
-![Task Manager architecture diagram](docs/architecture-diagram.png)
+![Task Manager architecture diagram](docs/architecture-diagram.svg)
 
 *(Browser → Frontend (public) → api-service / notification-service
 (internal) → Redis pub/sub, connecting the two backend services
