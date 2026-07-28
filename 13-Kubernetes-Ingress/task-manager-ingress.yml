@@ -17,3 +17,17 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
+          - path: /api-service
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 4000
+          - path: /notification-service
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 5000
