@@ -15,4 +15,4 @@ spec:
               service:
                 name: hello-app
                 port:
-                  number: 80
+                  number: 50
