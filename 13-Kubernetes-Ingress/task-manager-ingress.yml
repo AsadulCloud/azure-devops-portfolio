@@ -11,14 +11,14 @@ spec:
     - http:
         paths:
           - path: /task-manager(/|$)(.*)
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: frontend-service
                 port:
                   number: 80
           - path: /api-service(/|$)(.*)
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: api-service
