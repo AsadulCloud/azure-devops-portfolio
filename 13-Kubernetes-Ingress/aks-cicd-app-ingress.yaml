@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aks-cicd-app-ingress
+  namespace: aks-cicd-app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /aks-app(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: aks-cicd-app-service
+                port:
+                  number: 80
