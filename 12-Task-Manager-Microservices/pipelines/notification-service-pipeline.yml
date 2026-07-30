@@ -21,7 +21,7 @@ variables:
 - name: imageRepository
   value: 'task-manager-api'
 - name: dockerfilePath
-  value: '12-Task-Manager-Microservices/notification-service/Dockerfile'
+  value: '12-Task-Manager-Microservices/frontend/Dockerfile'
 - name: tag
   value: '$(Build.BuildId)'
 - name: imagePullSecret
