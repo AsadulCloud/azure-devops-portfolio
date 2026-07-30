@@ -15,14 +15,20 @@ resources:
   - repo: self
 
 variables:
-  # Docker Registry service connection (Basic Auth - the one confirmed working)
-  dockerRegistryServiceConnection: 'asadulcicdacr'
-  imageRepository: 'task-manager-api'
-  containerRegistry: 'asadulcicdacr.azurecr.io'
-  dockerfilePath: '12-Task-Manager-Microservices/api-service/Dockerfile'
-  tag: '$(Build.BuildId)'
-  imagePullSecret: 'asadulcicdacr-task-manager-auth'
-  vmImageName: 'ubuntu-latest'
+- group: task-manager-shared     # pulls in acrLoginServer, aksClusterName, aksResourceGroup, namespace
+# Docker Registry service connection (Basic Auth - the one confirmed working)
+- name: dockerRegistryServiceConnection
+  value: 'asadulcicdacr'
+- name: imageRepository
+  value: 'task-manager-api'
+- name: dockerfilePath
+  value: '12-Task-Manager-Microservices/api-service/Dockerfile'
+- name: tag
+  value: '$(Build.BuildId)'
+- name: imagePullSecret
+  value: 'asadulcicdacr-task-manager-auth'
+- name: vmImageName
+  value: 'ubuntu-latest'
 
 stages:
   - stage: Build
@@ -78,4 +84,4 @@ stages:
                     imagePullSecrets: |
                       $(imagePullSecret)
                     containers: |
-                      $(containerRegistry)/$(imageRepository):$(tag)
+                      $(acrLoginServer)/$(imageRepository):$(tag)
