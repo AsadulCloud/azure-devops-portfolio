@@ -64,8 +64,16 @@ steps:
       azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
+      addSpnToEnvironment: true
       inlineScript: |
         cd $(terraformworkingdirectory)
+
+        export ARM_CLIENT_ID=$servicePrincipalId
+        export ARM_TENANT_ID=$tenantId
+        export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+        export ARM_USE_OIDC=true
+        export ARM_OIDC_TOKEN=$idToken
+
         echo "##vso[task.setvariable variable=VM_IP]$(terraform output -raw vm_public_ip)"
         terraform output -raw ssh_private_key > $(Agent.TempDirectory)/capstone_key.pem
         chmod 600 $(Agent.TempDirectory)/capstone_key.pem
