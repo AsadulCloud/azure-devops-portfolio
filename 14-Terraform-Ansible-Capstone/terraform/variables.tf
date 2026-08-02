@@ -6,7 +6,7 @@ variable "resource_group_name" {
 }
 variable "location" {
   description = "The Azure region to deploy resources"
-  default     = "spaincentral"
+  default     = "polandcentral"
 }
 variable "vm_size" {
   description = "The size of the virtual machine"
