@@ -105,3 +105,4 @@ steps:
       echo "Curling the VM's public IP to prove the whole chain worked:"
       curl -sS http://$(VM_IP) | head -n 20
     displayName: 'Verify nginx is reachable externally'
+
