@@ -25,7 +25,7 @@ spec:
                 port:
                   number: 4000
           - path: /notification-service(/|$)(.*)
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: notification-service
