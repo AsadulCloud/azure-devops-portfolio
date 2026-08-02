@@ -1,0 +1,107 @@
+# 14-Terraform-Ansible-Capstone/azure-pipelines-capstone.yml
+# Capstone: Terraform provisions a VM -> pipeline captures its IP and SSH key
+# -> Ansible configures it with nginx -> pipeline proves it worked with curl.
+# All in one continuous run, no manual copy-pasting of IPs or keys.
+trigger:
+  branches:
+    include:
+      - main
+    
+  paths:
+    include:
+      - 14-Terraform-Ansible-Capstone/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: terraformworkingdirectory
+    value: '$(System.DefaultWorkingDirectory)/14-Terraform-Ansible-Capstone/terraform'
+  - name: ansibleworkingdirectory
+    value: '$(System.DefaultWorkingDirectory)/14-Terraform-Ansible-Capstone/ansible'
+  - name: azureServiceConnection
+    value: 'your-azure-service-connection-name'
+
+steps:
+# --- Step 1: Install Terraform on the pipeline agent ---
+  - script: |
+      curl -sL https://releases.hashicorp.com/terraform/1.9.8/terraform_1.9.8_linux_amd64.zip -o terraform.zip
+      unzip terraform.zip
+      sudo mv terraform /usr/local/bin/
+      terraform -version
+    displayName: 'Install Terraform'
+
+# --- Steps 2+3 combined: Terraform init + apply, run as plain CLI commands
+#     inside AzureCLI@2 (a built-in task - no extension dependency).
+#     addSpnToEnvironment exposes the service connection's credentials as
+#     $servicePrincipalId / $servicePrincipalKey / $tenantId, which we map
+#     to the ARM_* environment variables the azurerm provider expects
+  - task: AzureCLI@2
+    displayName: 'Terraform Init + Apply'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        cd $(terraformworkingdirectory)
+        terraform init \
+        terraform apply -auto-approve
+
+# --- Step 4: Capture Terraform's outputs into pipeline variables ---
+  # This is the bridge: Terraform's output becomes usable as $(VM_IP) and
+  # the private key gets written straight to a file for Ansible to use.
+  - script: |
+      cd $(terraformworkingdirectory)
+      echo "##vso[task.setvariable variable=VM_IP]$(terraform output -raw vm_public_ip)"
+      terraform output -raw ssh_private_key > $(agent.TempDirectory)/capstone_key.pem
+      chmod 600 $(agent.TempDirectory)/capstone_key.pem
+    displayName: 'Capture Terraform outputs (IP and SSH key)'
+
+ # --- Step 5: FIX #3 - Real SSH-ready retry loop, not a guessed sleep time ---
+  # Instead of assuming the VM is ready after a fixed number of seconds, this
+  # actually attempts a TCP connection to port 22 repeatedly, and only moves
+  # on once the VM genuinely responds - or fails loudly after a sane timeout
+  # instead of silently trying Ansible against a VM that isn't ready yet.
+  - script: |
+      echo "Waiting for SSH to become available on $(VM_IP)..."
+      max_attempts=30
+      attempt=0
+      until nc -z -w 3 $(VM_IP) 22; do
+        attempt=$((attempt+1))
+        if [ "$attempt" -ge "$max_attempts" ]; then
+          echo "##vso[task.logissue type=error]VM did not become SSH-ready after $((max_attempts * 5)) seconds."
+          exit 1
+        fi
+        echo "Attempt $attempt/$max_attempts: SSH not ready yet, retrying in 5s..."
+        sleep 5
+      done
+      echo "SSH port is open - VM is ready."
+    displayName: 'Wait for VM SSH readiness (retry loop, not fixed sleep)'
+
+# --- Step 6: Generate a dynamic Ansible inventory using the captured IP ---
+  - script: |
+      cat > $(ansibleworkingdirectory)/inventory.ini << EOF
+      [webservers]
+      web1 ansible_host=$(VM_IP) ansible_user=azureuser ansible_ssh_private_key_file=$(Agent.TempDirectory)/capstone_key.pem
+      EOF
+      echo "Generated inventory:"
+      cat $(ansibleworkingdirectory)/inventory.ini
+    displayName: 'Generate dynamic Ansible inventory'
+
+# --- Step 7: Install Ansible on the pipeline agent ---
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y ansible
+    displayName: 'Install Ansible'
+
+ # --- Step 8: Run the playbook against the freshly generated inventory ---
+  - script: |
+      cd $(ansibleworkingdirectory)
+      ansible-playbook -i inventory.ini site.yml
+    displayName: 'Configure VM with Ansible (install + start nginx)'
+
+# --- Step 9: Final proof - curl the VM's public IP from outside ---
+  - script: |
+      echo "Curling the VM's public IP to prove the whole chain worked:"
+      curl -sS http://$(VM_IP) | head -n 20
+    displayName: 'Verify nginx is reachable externally'

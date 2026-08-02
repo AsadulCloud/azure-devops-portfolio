@@ -2,8 +2,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hello-app-ingress
-  namespace: ingress-test
+  name: Port
+  namespace: aks-cicd-app
 spec:
   ingressClassName: nginx
   rules:
