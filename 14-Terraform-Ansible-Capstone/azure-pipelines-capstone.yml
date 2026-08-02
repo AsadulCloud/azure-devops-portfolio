@@ -58,13 +58,17 @@ steps:
 # --- Step 4: Capture Terraform's outputs into pipeline variables ---
   # This is the bridge: Terraform's output becomes usable as $(VM_IP) and
   # the private key gets written straight to a file for Ansible to use.
-  - script: |
-      cd $(terraformworkingdirectory)
-      echo "##vso[task.setvariable variable=VM_IP]$(terraform output -raw vm_public_ip)"
-      terraform output -raw ssh_private_key > $(agent.TempDirectory)/capstone_key.pem
-      chmod 600 $(agent.TempDirectory)/capstone_key.pem
+  - task: AzureCLI@2
     displayName: 'Capture Terraform outputs (IP and SSH key)'
-
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        cd $(terraformworkingdirectory)
+        echo "##vso[task.setvariable variable=VM_IP]$(terraform output -raw vm_public_ip)"
+        terraform output -raw ssh_private_key > $(Agent.TempDirectory)/capstone_key.pem
+        chmod 600 $(Agent.TempDirectory)/capstone_key.pem
  # --- Step 5: FIX #3 - Real SSH-ready retry loop, not a guessed sleep time ---
   # Instead of assuming the VM is ready after a fixed number of seconds, this
   # actually attempts a TCP connection to port 22 repeatedly, and only moves
