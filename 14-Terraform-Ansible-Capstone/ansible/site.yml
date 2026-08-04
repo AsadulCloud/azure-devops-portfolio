@@ -4,6 +4,7 @@
 # Nginx is used because success is instantly visible - just curl the IP
 # afterward and you'll see its default welcome page.
 
+
 - name: Configure capstone VM
   hosts: webservers
   become: true          # run tasks with sudo, since installing packages needs root
