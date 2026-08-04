@@ -5,3 +5,7 @@
 *.jpg
 sp.sh
 *.save
+
+# Allow proof screenshots for the capstone project
+!14-Terraform-Ansible-Capstone/Proof/*.png
+!14-Terraform-Ansible-Capstone/Proof/*.jpg
