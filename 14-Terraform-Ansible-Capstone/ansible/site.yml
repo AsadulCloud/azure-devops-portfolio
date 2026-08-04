@@ -3,30 +3,47 @@
 # Goal: prove the Terraform -> pipeline -> Ansible chain works end to end.
 # Nginx is used because success is instantly visible - just curl the IP
 # afterward and you'll see its default welcome page.
+
 - name: Configure capstone VM
-  hosts: webserver
-  become: true
+  hosts: webservers
+  become: true          # run tasks with sudo, since installing packages needs root
   gather_facts: true
+
   tasks:
     - name: Update apt package cache
       apt:
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Install Nginx
+    - name: Install nginx
       apt:
         name: nginx
         state: present
-    - name: Ensure Nginx is running and enabled on boot
+
+    - name: Ensure nginx is running and enabled on boot
       service:
         name: nginx
         state: started
         enabled: true
+
+    - name: Ensure UFW allows HTTP
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    - name: Ensure UFW allows SSH
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
     - name: Confirm nginx is responding locally on the VM
       uri:
-        url: http://localhost
+        url: "http://localhost"
         status_code: 200
       register: result
-    - name: Show result of local curl to Nginx
+
+    - name: Show the result
       debug:
         msg: "Nginx responded with status {{ result.status }} - setup successful"
