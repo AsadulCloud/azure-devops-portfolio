@@ -17,7 +17,7 @@ variables:
   imageName: 'aks-cicd-app'
   # AKS cluster + resource group (must match terraform outputs)
   aksClusterName: 'portfolioasad-aks'
-  aksResourceGroup: 'portfolioasad-rg'
+  aksResourceGroup: 'asadulcicd-rg'
   # Use the pipeline's own build ID as a unique, traceable image tag
   imageTag: '$(Build.BuildId)'
 
