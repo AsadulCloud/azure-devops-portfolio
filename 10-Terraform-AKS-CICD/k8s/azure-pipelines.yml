@@ -12,12 +12,12 @@ variables:
   # Service connection to your Azure subscription (Project Settings > Service connections)
   azureSubscription: 'your-azure-service-connection-name'
   # ACR name (must match terraform's "acr_login_server" output, without ".azurecr.io")
-  acrName: 'asadulcicdacr'
-  acrLoginServer: 'asadulcicdacr.azurecr.io'
+  acrName: 'portfolioasadacr'
+  acrLoginServer: 'portfolioasadacr.azurecr.io'
   imageName: 'aks-cicd-app'
   # AKS cluster + resource group (must match terraform outputs)
-  aksClusterName: 'asadulcicd-aks'
-  aksResourceGroup: 'asadulcicd-rg'
+  aksClusterName: 'portfolioasad-aks'
+  aksResourceGroup: 'portfolioasad-rg'
   # Use the pipeline's own build ID as a unique, traceable image tag
   imageTag: '$(Build.BuildId)'
 
