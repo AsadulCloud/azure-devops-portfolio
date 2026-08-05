@@ -74,8 +74,10 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                sed -i "s|ACR_LOGIN_SERVER/portfolio-app:latest|$(acrLoginServer)/$(imageName):$(imageTag)|g" k8s/deployment.yaml
-                cat k8s/deployment.yaml
+                sed -i "s|ACR_LOGIN_SERVER/aks-cicd-app:latest|$(acrLoginServer)/$(imageName):$(imageTag)|g" \
+                  $(Build.SourcesDirectory)/10-Terraform-AKS-CICD/k8s/deployment.yaml
+
+                cat $(Build.SourcesDirectory)/10-Terraform-AKS-CICD/k8s/deployment.yaml
 
           - task: Kubernetes@1
             displayName: 'Apply Deployment manifest'
@@ -85,7 +87,7 @@ stages:
               azureResourceGroup: '$(aksResourceGroup)'
               kubernetesCluster: '$(aksClusterName)'
               command: 'apply'
-              arguments: '-f k8s/deployment.yaml'
+              arguments: '-f $(Build.SourcesDirectory)/10-Terraform-AKS-CICD/k8s/deployment.yaml'
 
           - task: Kubernetes@1
             displayName: 'Apply Service manifest'
@@ -95,4 +97,4 @@ stages:
               azureResourceGroup: '$(aksResourceGroup)'
               kubernetesCluster: '$(aksClusterName)'
               command: 'apply'
-              arguments: '-f k8s/service.yaml'
+              arguments: '-f $(Build.SourcesDirectory)/10-Terraform-AKS-CICD/k8s/service.yaml'
