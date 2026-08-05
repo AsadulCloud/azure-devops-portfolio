@@ -40,7 +40,7 @@ stages:
               repository: '$(imageName)'
               command: 'buildAndPush'
               Dockerfile: '10-Terraform-AKS-CICD/app/Dockerfile'
-              buildContext: 'app'
+              buildContext: '10-Terraform-AKS-CICD/app'
               tags: |
                 $(imageTag)
                 latest
