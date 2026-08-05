@@ -13,8 +13,8 @@ terraform {
     # Create this storage account BEFORE running terraform init (See the README for instructions)
     backend "azurerm" {
         resource_group_name  = "tfstate-rg"
-        storage_account_name = "tfstateasadul001"
-        container_name       = "tfstate"
+        storage_account_name = "tfstateasadul0001"
+        container_name       = "tfstate10"
         key                  = "terraform.tfstate"
     }
 } 
