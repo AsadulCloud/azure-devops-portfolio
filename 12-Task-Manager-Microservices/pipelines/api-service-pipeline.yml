@@ -66,7 +66,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: KubernetesManifest@0
+                - task: KubernetesManifest@1
                   displayName: Create imagePullSecret
                   inputs:
                     action: createSecret
@@ -74,7 +74,7 @@ stages:
                     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-default-1785929424557'
 
-                - task: KubernetesManifest@0
+                - task: KubernetesManifest@1
                   displayName: Deploy api-service
                   inputs:
                     action: deploy
