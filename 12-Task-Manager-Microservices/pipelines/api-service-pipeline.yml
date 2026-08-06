@@ -66,7 +66,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: KubernetesManifest@1
+                - task: KubernetesManifest@0
                   displayName: Create imagePullSecret
                   inputs:
                     action: createSecret
@@ -75,7 +75,7 @@ stages:
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
                     namespace: '$(namespace)'
 
-                - task: KubernetesManifest@1
+                - task: KubernetesManifest@0
                   displayName: Deploy api-service
                   inputs:
                     action: deploy
