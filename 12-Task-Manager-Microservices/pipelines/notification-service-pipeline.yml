@@ -78,6 +78,7 @@ stages:
                   inputs:
                     action: deploy
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
+                    namespace: '$(namespace)'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/notification-service.yaml
                     imagePullSecrets: |
