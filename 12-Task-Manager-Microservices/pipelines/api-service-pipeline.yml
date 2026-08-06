@@ -73,6 +73,7 @@ stages:
                     secretName: $(imagePullSecret)
                     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
+                    namespace: '$(namespace)'
 
                 - task: KubernetesManifest@1
                   displayName: Deploy api-service
