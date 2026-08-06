@@ -18,7 +18,7 @@ variables:
 - group: task-manager-shared     # pulls in acrLoginServer, aksClusterName, aksResourceGroup, namespace
 # Docker Registry service connection (Basic Auth - the one confirmed working)
 - name: dockerRegistryServiceConnection
-  value: 'asadulcicdacr'
+  value: 'portfolioasadacr'
 - name: imageRepository
   value: 'task-manager-api'
 - name: dockerfilePath
@@ -26,7 +26,7 @@ variables:
 - name: tag
   value: '$(Build.BuildId)'
 - name: imagePullSecret
-  value: 'asadulcicdacr-task-manager-auth'
+  value: 'portfolioasadacr-task-manager-auth'
 - name: vmImageName
   value: 'ubuntu-latest'
 
@@ -72,13 +72,13 @@ stages:
                     action: createSecret
                     secretName: $(imagePullSecret)
                     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-                    kubernetesServiceConnection: 'task-manager-asadulcicd-aks-task-manager-1784884434412'
+                    kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager-1784884434412'
 
                 - task: KubernetesManifest@0
                   displayName: Deploy api-service
                   inputs:
                     action: deploy
-                    kubernetesServiceConnection: 'task-manager-asadulcicd-aks-task-manager-1784884434412'
+                    kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager-1784884434412'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/api-service.yaml
                     imagePullSecrets: |
