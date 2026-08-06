@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: portfolioasadacr.azurecr.io/task-manager-notification:latest
+          image: portfolioasadacr.azurecr.io/task-manager-api:placeholder
           ports:
             - containerPort: 5000
           env:

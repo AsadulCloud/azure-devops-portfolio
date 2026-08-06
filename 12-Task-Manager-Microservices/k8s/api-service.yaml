@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api-service
-          image: portfolioasadacr.azurecr.io/task-manager-api:latest
+          image: portfolioasadacr.azurecr.io/task-manager-api:placeholder
           ports:
             - containerPort: 4000
           env:

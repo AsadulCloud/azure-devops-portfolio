@@ -72,13 +72,13 @@ stages:
                     action: createSecret
                     secretName: $(imagePullSecret)
                     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-                    kubernetesServiceConnection: 'task-manager-portfolioasad-aks-default-1785929424557'
+                    kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
 
                 - task: KubernetesManifest@1
                   displayName: Deploy api-service
                   inputs:
                     action: deploy
-                    kubernetesServiceConnection: 'task-manager-portfolioasad-aks-default-1785929424557'
+                    kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/api-service.yaml
                     imagePullSecrets: |
