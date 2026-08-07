@@ -1,5 +1,4 @@
 # notification-service pipeline - builds, pushes, and deploys ONLY notification-service.
-# Matches the proven-working pattern from 10-Terraform-AKS-CICD.
 
 trigger:
   branches:
@@ -14,20 +13,22 @@ resources:
   - repo: self
 
 variables:
-- group: task-manager-shared     # pulls in acrLoginServer, aksClusterName, aksResourceGroup, namespace
-# Docker Registry service connection (Basic Auth - the one confirmed working)
-- name: dockerRegistryServiceConnection
-  value: 'portfolioasadacr'
-- name: imageRepository
-  value: 'task-manager-api'
-- name: dockerfilePath
-  value: '12-Task-Manager-Microservices/notification-service/Dockerfile'
-- name: tag
-  value: '$(Build.BuildId)'
-- name: imagePullSecret
-  value: 'portfolioasadacr-task-manager-auth'
-- name: vmImageName
-  value: 'ubuntu-latest'
+  - group: task-manager-shared
+  - name: dockerRegistryServiceConnection
+    value: 'portfolioasadacr'
+  - name: imageRepository
+    value: 'task-manager-notification'
+  - name: dockerfilePath
+    value: '12-Task-Manager-Microservices/notification-service/Dockerfile'
+  - name: tag
+    value: '$(Build.BuildId)'
+  - name: imagePullSecret
+    value: 'portfolioasadacr-task-manager-auth'
+  - name: vmImageName
+    value: 'ubuntu-latest'
+  - name: manifestFile
+    value: 'notification-service.yaml'
+
 stages:
   - stage: Build
     displayName: Build stage
@@ -73,6 +74,12 @@ stages:
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
                     namespace: '$(namespace)'
 
+                - script: |
+                    sed -i "s#$(acrLoginServer)/$(imageRepository):.*#$(acrLoginServer)/$(imageRepository):$(tag)#g" $(Pipeline.Workspace)/manifests/$(manifestFile)
+                    echo "Final image line:"
+                    grep image: $(Pipeline.Workspace)/manifests/$(manifestFile)
+                  displayName: 'Inject real image tag into manifest'
+
                 - task: KubernetesManifest@1
                   displayName: Deploy notification-service
                   inputs:
@@ -80,8 +87,6 @@ stages:
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
                     namespace: '$(namespace)'
                     manifests: |
-                      $(Pipeline.Workspace)/manifests/notification-service.yaml
+                      $(Pipeline.Workspace)/manifests/$(manifestFile)
                     imagePullSecrets: |
                       $(imagePullSecret)
-                    containers: |
-                      $(acrLoginServer)/$(imageRepository):$(tag)

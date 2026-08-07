@@ -1,6 +1,4 @@
 # api-service pipeline - builds, pushes, and deploys ONLY api-service.
-# Matches the proven-working pattern from 10-Terraform-AKS-CICD:
-# KubernetesManifest@0 + environment-based deploy, not ARM connection.
 
 trigger:
   branches:
@@ -15,20 +13,21 @@ resources:
   - repo: self
 
 variables:
-- group: task-manager-shared     # pulls in acrLoginServer, aksClusterName, aksResourceGroup, namespace
-# Docker Registry service connection (Basic Auth - the one confirmed working)
-- name: dockerRegistryServiceConnection
-  value: 'portfolioasadacr'
-- name: imageRepository
-  value: 'task-manager-api'
-- name: dockerfilePath
-  value: '12-Task-Manager-Microservices/api-service/Dockerfile'
-- name: tag
-  value: '$(Build.BuildId)'
-- name: imagePullSecret
-  value: 'portfolioasadacr-task-manager-auth'
-- name: vmImageName
-  value: 'ubuntu-latest'
+  - group: task-manager-shared     # pulls in acrLoginServer, aksClusterName, namespace, resource_group_name
+  - name: dockerRegistryServiceConnection
+    value: 'portfolioasadacr'
+  - name: imageRepository
+    value: 'task-manager-api'
+  - name: dockerfilePath
+    value: '12-Task-Manager-Microservices/api-service/Dockerfile'
+  - name: tag
+    value: '$(Build.BuildId)'
+  - name: imagePullSecret
+    value: 'portfolioasadacr-task-manager-auth'
+  - name: vmImageName
+    value: 'ubuntu-latest'
+  - name: manifestFile
+    value: 'api-service.yaml'
 
 stages:
   - stage: Build
@@ -66,7 +65,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: KubernetesManifest@0
+                - task: KubernetesManifest@1
                   displayName: Create imagePullSecret
                   inputs:
                     action: createSecret
@@ -75,15 +74,22 @@ stages:
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
                     namespace: '$(namespace)'
 
-                - task: KubernetesManifest@0
+                # Inject the real, unique build tag directly into the manifest
+                # instead of relying on KubernetesManifest's containers: override,
+                # which was found to silently leave the placeholder tag in place.
+                - script: |
+                    sed -i "s#$(acrLoginServer)/$(imageRepository):.*#$(acrLoginServer)/$(imageRepository):$(tag)#g" $(Pipeline.Workspace)/manifests/$(manifestFile)
+                    echo "Final image line:"
+                    grep image: $(Pipeline.Workspace)/manifests/$(manifestFile)
+                  displayName: 'Inject real image tag into manifest'
+
+                - task: KubernetesManifest@1
                   displayName: Deploy api-service
                   inputs:
                     action: deploy
                     kubernetesServiceConnection: 'task-manager-portfolioasad-aks-task-manager'
                     namespace: '$(namespace)'
                     manifests: |
-                      $(Pipeline.Workspace)/manifests/api-service.yaml
+                      $(Pipeline.Workspace)/manifests/$(manifestFile)
                     imagePullSecrets: |
                       $(imagePullSecret)
-                    containers: |
-                      $(acrLoginServer)/$(imageRepository):$(tag)
