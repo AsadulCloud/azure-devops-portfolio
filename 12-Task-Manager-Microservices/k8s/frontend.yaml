@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: portfolioasadacr.azurecr.io/task-manager-api:placeholder
+          image: portfolioasadacr.azurecr.io/task-manager-frontend:placeholder
           ports:
             - containerPort: 80
 ---
