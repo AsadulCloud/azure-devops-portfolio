@@ -1,0 +1,87 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voting-app-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /vote(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: vote
+                port:
+                  number: 8080
+          - path: /result(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: result
+                port:
+                  number: 8081
+
+          # The vote app's form uses action="/" (an absolute path, not
+          # relative to /vote) - so the POST goes straight to root.
+          # This catch-all must stay LAST so it doesn't shadow more
+          # specific rules elsewhere.
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: vote
+                port:
+                  number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voting-app-result-assets-ingress
+  namespace: default
+  # No rewrite-target annotation here - these paths must pass through
+  # UNCHANGED, since the result app's <base href="/index.html"> makes
+  # the browser request these assets at these exact root-level paths.
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /app.js
+            pathType: Exact
+            backend:
+              service:
+                name: result
+                port:
+                  number: 8081
+          - path: /angular.min.js
+            pathType: Exact
+            backend:
+              service:
+                name: result
+                port:
+                  number: 8081
+          - path: /socket.io.js
+            pathType: Exact
+            backend:
+              service:
+                name: result
+                port:
+                  number: 8081
+          - path: /stylesheets
+            pathType: Prefix
+            backend:
+              service:
+                name: result
+                port:
+                  number: 8081
+          - path: /socket.io/
+            pathType: Prefix
+            backend:
+              service:
+                name: result
+                port:
+                  number: 8081

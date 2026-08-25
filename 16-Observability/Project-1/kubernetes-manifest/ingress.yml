@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-services-ingress
+  namespace: dev
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: demo.70.156.167.95.nip.io
+      http:
+        paths:
+          # a-service — root + all its endpoints (/, /healthy, /serverError,
+          # /notFound, /logs, /crash, /example, /metrics, /call-service-b)
+          - path: /service-a(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: a-service
+                port:
+                  number: 80
+
+          # b-service — internal only in the original tutorial; exposed here
+          # only if you want to hit it directly for testing/debugging
+          - path: /service-b(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: b-service
+                port:
+                  number: 80
