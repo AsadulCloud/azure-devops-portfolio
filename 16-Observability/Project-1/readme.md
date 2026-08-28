@@ -22,7 +22,7 @@ I built this project to demonstrate that I can **set up, configure, debug, and f
 | **Instrumentation** | Adding code or exporters to expose internal system data as metrics | Used `prom-client` library in Node.js apps to expose custom HTTP metrics |
 | **Service Discovery** | Automatically finding and scraping new targets without manual config | Configured `ServiceMonitor` CR so Prometheus auto-discovers app pods in `dev` namespace |
 | **Exporters** | Agents that collect metrics from systems that don't natively support Prometheus | kube-prometheus-stack includes Node Exporter (hardware) and kube-state-metrics (K8s objects) |
-| **PromQL** | Prometheus query language to filter, aggregate, and analyze time-series metrics | Wrote queries for CPU usage, restart counts, request rates, and 95th percentile latency |
+| **PromQL** | Prometheus query language to filter, aggregate, and analyze time-series metrics | Wrote queries for CPU usage, restart counts, request rates, error %, and p95 latency |
 | **Alertmanager** | Handles deduplication, grouping, and routing of alerts to receivers like email or Slack | Configured routing rules, inhibition rules, and Gmail SMTP delivery |
 
 ---
@@ -35,6 +35,7 @@ I built this project to demonstrate that I can **set up, configure, debug, and f
 | Helm | Installed kube-prometheus-stack, managed releases |
 | Kustomize | Managed all manifests with Kustomize overlays |
 | Prometheus | Configured scraping, wrote PromQL queries, defined alert rules |
+| Grafana | Built custom dashboard (request rate, error %, p95, restarts, CPU) as code |
 | Alertmanager | Configured routing, receivers, inhibition rules, email delivery |
 | Debugging | Diagnosed and fixed a real cross-namespace alerting bug |
 | NGINX Ingress | Exposed services via Ingress instead of port-forwarding |
@@ -96,15 +97,20 @@ Project-1/
 ├── application/
 │   ├── service-a/               # Node.js app with custom Prometheus metrics
 │   └── service-b/               # Downstream microservice
-├── kubernetes-manifest/
-│   └── kustomization.yml        # App deployment via Kustomize
+├── kubernetes-manifest/       # App deployment via Kustomize
 ├── alerts-alertmanager-servicemonitor-manifest/
 │   ├── alerts.yml               # PrometheusRule — HighCpuUsage & PodRestart
 │   ├── email-secrets.yml        # Gmail credentials as K8s Secret
 │   ├── alertmanager-secret.yml  # Direct Alertmanager config
 │   ├── serviceMonitor.yml       # Scrape config for dev namespace apps
 │   └── kustomization.yml
-└── README.md
+├── monitoring-ingress/          # Ingress for Prometheus / Grafana / Alertmanager
+├── dashboards/                  # Exported Grafana dashboard JSON (dashboard-as-code)
+├── proof/                       # Screenshots / PDFs of live stack
+├── prometheus-grafana-dashboard-guide.md  # PromQL + Grafana panel walkthrough
+├── generate-traffic.sh          # Load script for live dashboard demos
+├── test.sh                      # Broader random endpoint traffic
+└── readme.md
 ```
 
 ---
@@ -170,22 +176,55 @@ Instrumented Node.js apps with `prom-client` to expose:
 
 ---
 
-## 🔍 PromQL Queries
+## 🔍 PromQL Queries (core set)
+
+```promql
+# Request rate (always wrap counters in rate())
+sum(rate(http_requests_total{service="a-service"}[5m]))
+
+# Error rate %
+sum(rate(http_requests_total{service="a-service", status_code=~"5.."}[5m]))
+/
+sum(rate(http_requests_total{service="a-service"}[5m]))
+* 100
+
+# p95 latency
+histogram_quantile(0.95,
+  sum(rate(http_request_duration_seconds_bucket{service="a-service"}[5m])) by (le)
+)
+
+# Pod restarts (last hour)
+increase(kube_pod_container_status_restarts_total{namespace="dev"}[1h])
+
+# Node CPU usage
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+```
+
+**Full walkthrough** (Prometheus UI → Grafana panels → traffic → export JSON):  
+👉 [prometheus-grafana-dashboard-guide.md](./prometheus-grafana-dashboard-guide.md)
+
+---
+
+## 📊 Grafana Dashboard (dashboard-as-code)
+
+Built a 6-panel dashboard for `service-a`:
+
+1. Request Rate  
+2. Requests by Endpoint  
+3. Error Rate %  
+4. p95 Latency  
+5. Pod Restarts (1h)  
+6. Node CPU Usage  
+
+Exported JSON (import into any Grafana):
+
+- [dashboards/service-a-Monitoring-Overview-1787915013636.json](dashboards/service-a-Monitoring-Overview-1787915013636.json)
+
+Generate live traffic while the dashboard is open:
 
 ```bash
-# CPU usage across all nodes
-100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)
-
-# Pod restart count
-kube_pod_container_status_restarts_total > 2
-
-# HTTP request rate per service
-rate(http_requests_total[5m])
-
-# 95th percentile request duration
-histogram_quantile(0.95,
-  sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
-)
+chmod +x generate-traffic.sh
+./generate-traffic.sh http://demo.<your-ingress-ip>.nip.io/service-a
 ```
 
 ---
@@ -264,8 +303,9 @@ stringData:
 
 - `AlertmanagerConfig` CR is **namespace-scoped by design** — cross-namespace alerting requires a direct Kubernetes Secret, not a CR
 - Always verify the **live rendered config** (`alertmanager.env.yaml`), not just source manifests — the operator silently transforms what you wrote
-- Kustomize keeps related manifests clean and manageable without Helm values complexity
-- NGINX Ingress is more realistic for production than port-forwarding — services are accessible without CLI access
+- Counters must be wrapped in `rate()`; histograms need `histogram_quantile()` for percentiles
+- Kustomize keeps related manifests clean without Helm values complexity
+- NGINX Ingress is more realistic for production than port-forwarding
 - Debugging order that works: logs → rendered config → UI → metric labels → routing rules
 
 ---
@@ -280,7 +320,7 @@ stringData:
 
 ### 📊 Grafana Dashboard
 ![Grafana Dashboard](proof/dashboard-ss.pdf)
-> Live metrics visualized in Grafana — CPU usage, memory, pod status across namespaces.
+> Live metrics visualized in Grafana — request rate, error rate, latency, pod status.
 
 ### 🔍 Prometheus Query Page
 ![Prometheus Queries](proof/Prometheus.pdf)
@@ -288,8 +328,7 @@ stringData:
 
 ### 📊 Grafana Dashboard Export
 [Download Dashboard JSON](dashboards/service-a-Monitoring-Overview-1787915013636.json)
-> Exported Grafana dashboard JSON — can be imported directly into any Grafana instance to recreate the exact dashboard.
-
+> Exported Grafana dashboard JSON — import into any Grafana instance to recreate the dashboard.
 
 ---
 
