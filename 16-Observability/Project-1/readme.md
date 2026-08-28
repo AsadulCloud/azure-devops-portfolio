@@ -279,11 +279,11 @@ stringData:
 > Real email received in Gmail when service-a exceeded 2 restarts in the dev namespace.
 
 ### 📊 Grafana Dashboard
-![Grafana Dashboard](proof/grafana_dashboard_ss_1)
+![Grafana Dashboard](proof/grafana_dashboard_ss_1.png)
 > Live metrics visualized in Grafana — CPU usage, memory, pod status across namespaces.
 
 ### 🔍 Prometheus Query Page
-![Prometheus Queries](proof/Prometheus Time Series Collection and Processing Server.pdf)
+![Prometheus Queries](proof/Prometheus.pdf)
 > Custom PromQL queries running against live cluster data.
 
 
