@@ -279,12 +279,16 @@ stringData:
 > Real email received in Gmail when service-a exceeded 2 restarts in the dev namespace.
 
 ### 📊 Grafana Dashboard
-![Grafana Dashboard](proof/grafana_dashboard_ss_1.png)
+![Grafana Dashboard](proof/dashboard-ss.pdf)
 > Live metrics visualized in Grafana — CPU usage, memory, pod status across namespaces.
 
 ### 🔍 Prometheus Query Page
 ![Prometheus Queries](proof/Prometheus.pdf)
 > Custom PromQL queries running against live cluster data.
+
+### 📊 Grafana Dashboard Export
+[Download Dashboard JSON](dashboards/service-a Monitoring Overview-1787915013636.json)
+> Exported Grafana dashboard JSON — can be imported directly into any Grafana instance to recreate the exact dashboard.
 
 
 ---
