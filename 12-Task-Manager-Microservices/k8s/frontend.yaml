@@ -23,10 +23,11 @@ kind: Service
 metadata:
   name: frontend-service
 spec:
-  # Only the frontend needs a public IP - this is the one entry point
-  # into the whole system, avoiding the public-IP-quota problem you
-  # hit on the previous project (one LoadBalancer instead of three).
-  type: LoadBalancer
+  # ClusterIP — public traffic enters via the shared NGINX Ingress Controller
+  # (see 13-Kubernetes-Ingress/task-manager-ingress.yml).
+  # Originally LoadBalancer; migrated to Ingress to avoid Azure public-IP quota limits
+  # and to share one external IP across multiple apps on the same cluster.
+  type: ClusterIP
   selector:
     app: frontend
   ports:

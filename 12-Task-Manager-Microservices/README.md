@@ -10,15 +10,14 @@ locally end-to-end before ever touching Kubernetes.
 
 ![Task Manager architecture diagram](docs/architecture-diagram.svg)
 
-*(Browser → Frontend (public) → api-service / notification-service
-(internal) → Redis pub/sub, connecting the two backend services
-asynchronously.)*
-
 ```
 Browser
    │
    ▼
-[frontend]  (nginx, LoadBalancer - only service with a public IP)
+[NGINX Ingress Controller]  ← single public IP for the cluster
+   │  path / host routing
+   ▼
+[frontend]  (nginx, ClusterIP)
    │  reverse-proxies /api-service/ and /notification-service/
    ▼
 [api-service] (Express, ClusterIP - internal only)
@@ -41,10 +40,16 @@ This means:
   Azure Service Bus) — Redis pub/sub here is a lightweight stand-in for learning
   the pattern before using a heavier, more durable message broker
 
-**Why only the frontend gets a public IP:** `api-service` and
-`notification-service` are `ClusterIP` (internal-only) — this also sidesteps
-the public IP quota problem from the previous project, since only one
-`LoadBalancer` service exists here instead of three.
+**Why Ingress instead of per-service LoadBalancers:**  
+Early versions exposed services with LoadBalancers and hit Azure's public-IP
+quota (3 IPs per subscription/region). The final design routes everything
+through a shared **NGINX Ingress Controller** so multiple apps on the same
+cluster share one external IP. All three services are `ClusterIP`; the
+Ingress is the only public entry point.
+
+Ingress manifests live in [`13-Kubernetes-Ingress/`](../13-Kubernetes-Ingress/):
+- `task-manager-ingress.yml` — path-based routing
+- `task-manager-ingress-host.yml` — host-based routing
 
 ## Local testing (before deploying to AKS)
 
@@ -68,8 +73,8 @@ docker push <your-acr-name>.azurecr.io/task-manager-frontend:latest
 
 ## Update image references
 
-In each `k8s/*.yaml` file, replace `ACR_LOGIN_SERVER` with your actual ACR
-login server (e.g. `asadulcicdacr.azurecr.io`).
+In each `k8s/*.yaml` file, replace `ACR_LOGIN_SERVER` / placeholder image tags
+with your actual ACR login server (e.g. `asadulcicdacr.azurecr.io`).
 
 ## Deploy to your existing AKS cluster
 
@@ -77,25 +82,36 @@ Reuses the same cluster from `10-Terraform-AKS-CICD` — no new Terraform
 needed unless you want a dedicated cluster.
 
 ```bash
+# 1. Namespace + workloads
 kubectl create namespace task-manager
 kubectl apply -f k8s/redis.yaml -n task-manager
 kubectl apply -f k8s/api-service.yaml -n task-manager
 kubectl apply -f k8s/notification-service.yaml -n task-manager
 kubectl apply -f k8s/frontend.yaml -n task-manager
+
+# 2. Ensure NGINX Ingress Controller is installed (once per cluster)
+# helm install ingress-nginx ingress-nginx/ingress-nginx \
+#   --namespace ingress-nginx --create-namespace
+
+# 3. Route traffic via Ingress (path-based or host-based)
+kubectl apply -f ../13-Kubernetes-Ingress/task-manager-ingress.yml
+# or: kubectl apply -f ../13-Kubernetes-Ingress/task-manager-ingress-host.yml
 ```
 
 ## Verify
 
 ```bash
 kubectl get pods -n task-manager
-kubectl get service frontend-service -n task-manager
+kubectl get svc -n task-manager
+kubectl get ingress -n task-manager
+kubectl get svc -n ingress-nginx   # EXTERNAL-IP of the Ingress Controller
 ```
 
-Once `frontend-service` has an `EXTERNAL-IP`, open `http://<that-ip>` in a
-browser. Add a task, mark it complete, and watch the Notifications panel
-update within a few seconds — that's the pub/sub message actually
-travelling from `api-service` → Redis → `notification-service` → back to
-the browser via polling.
+Open the Ingress Controller's external IP (or configured host) and hit the
+Task Manager path/host. Add a task, mark it complete, and watch the
+Notifications panel update within a few seconds — that's the pub/sub message
+travelling from `api-service` → Redis → `notification-service` → back to the
+browser via polling.
 
 ## CI/CD
 
@@ -128,15 +144,13 @@ mechanism Kubernetes Services provide cluster-wide, for free. Catching
 this locally, in minutes, avoided a much harder debugging session inside
 Kubernetes later.
 
-**Public IP quota exhausted again.** `frontend-service`'s LoadBalancer
-stayed `<pending>` indefinitely. Traced with `az network public-ip list`
-to the same 3-IPs-per-subscription/region ceiling hit on the previous
-project — an old, still-running service from that earlier project (in a
-different namespace, on the same shared cluster) was quietly holding one
-of the three available IPs. Fixed by deleting the unused old service to
-free the IP. Longer-term fix (not yet implemented): an Ingress Controller,
-so multiple apps on this cluster share one public IP instead of each
-grabbing its own.
+**Public IP quota exhausted.** Early deployments used per-service
+LoadBalancers. `frontend-service` stayed `<pending>` after the quota
+(3 public IPs per subscription/region) was exhausted by other workloads on
+the same cluster. Traced with `az network public-ip list`. Fixed by:
+1. Freeing unused LoadBalancer services from earlier projects
+2. Migrating Task Manager to a **shared NGINX Ingress Controller** so all
+   services are ClusterIP and only the Ingress holds a public IP
 
 **`KubernetesManifest@0` needed explicit service connection.** The pipeline
 task failed with `Input required: kubernetesServiceConnection` on both
@@ -157,11 +171,15 @@ If notifications stop appearing after adding a task:
    check `kubectl logs deployment/api-service -n task-manager` for a
    failed Redis publish
 
+If the app is unreachable externally:
+1. `kubectl get ingress -n task-manager` and `kubectl describe ingress -n task-manager`
+2. Confirm the Ingress Controller has an EXTERNAL-IP: `kubectl get svc -n ingress-nginx`
+3. Confirm all three services are ClusterIP and healthy: `kubectl get svc,pods -n task-manager`
+
 ## Next steps (optional extensions)
 
 - Add a database (Postgres) so tasks persist across pod restarts, instead
   of the current in-memory array
 - Swap Redis pub/sub for Azure Service Bus or RabbitMQ, to see the same
   pattern with a production-grade message broker
-- Add an Ingress Controller to share one public IP across multiple
-  projects on this cluster, instead of each grabbing its own LoadBalancer
+- TLS termination on the Ingress (cert-manager + Let's Encrypt)
