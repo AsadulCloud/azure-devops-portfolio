@@ -1,3 +1,9 @@
+resource "random_string" "acr_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+  numeric = true
+}
 # --------------------------------------------------------------------------------------------
 # Resource Group - the container that holds every resource for your project
 # --------------------------------------------------------------------------------------------
@@ -25,7 +31,7 @@ resource "azurerm_subnet" "aks" {
 # Azure Container Registry (ACR) - stores your Docker images
 # --------------------------------------------------------------------------------------------
 resource "azurerm_container_registry" "main" {
-    name                     = "${var.project_name}acr"
+    name                     = "${var.project_name}acr${random_string.acr_suffix.result}"
     resource_group_name      = azurerm_resource_group.main.name
     location                 = azurerm_resource_group.main.location
     sku                      = var.acr_sku
@@ -40,14 +46,15 @@ resource "azurerm_kubernetes_cluster" "main" {
     resource_group_name = azurerm_resource_group.main.name
     dns_prefix          = "${var.project_name}-aks"
     kubernetes_version = var.aks_kubernetes_version
-
-oidc_issuer_enabled = true
     default_node_pool {
-        name                = "default"
-        node_count          = var.aks_node_count
-        vm_size             = var.aks_node_vm_size
-        vnet_subnet_id      = azurerm_subnet.aks.id
-    }
+    name                  = "default"
+    node_count            = var.aks_node_count
+    vm_size               = var.aks_node_vm_size
+    vnet_subnet_id        = azurerm_subnet.aks.id
+    temporary_name_for_rotation = "tmpdefault"
+}
+
+    oidc_issuer_enabled = true
     # System assigned managed identity for the AKS cluster - AKS uses this to talk to other
     # Azure resources like ACR, without needing storing credentials.
     identity {

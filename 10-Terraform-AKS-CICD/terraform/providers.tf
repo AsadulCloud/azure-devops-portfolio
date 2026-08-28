@@ -4,6 +4,10 @@ terraform {
             source  = "hashicorp/azurerm"
             version = "~> 3.100"
         }
+        random = {
+            source  = "hashicorp/random"
+            version = "~> 3.6"
+        }
     }
 
     required_version = ">= 1.5.0"
@@ -12,14 +16,13 @@ terraform {
     # Instead of storing the state file locally, we can store it in a remote backend like Azure Storage Account, AWS S3, or Terraform Cloud. This allows multiple team members to work on the same infrastructure without conflicts.
     # Create this storage account BEFORE running terraform init (See the README for instructions)
     backend "azurerm" {
-        resource_group_name  = "tfstate-rg"
-        storage_account_name = "tfstateasadul0001"
-        container_name       = "tfstate10"
+        resource_group_name  = "tfstate-rg-r"
+        storage_account_name = "tfstateasadul0011"
+        container_name       = "tfstate"
         key                  = "terraform.tfstate"
     }
-} 
+}
 
 provider "azurerm" {
-    features {}    
-  
+    features {}
 }

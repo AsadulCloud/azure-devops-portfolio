@@ -19,6 +19,13 @@ spec:
       - image: abhishekf5/demoservice-b:v
         name: service-b
         imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "256m"
+            memory: "256Mi"
         ports:
         - containerPort: 3002
         env:

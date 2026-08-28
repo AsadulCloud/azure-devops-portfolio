@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: demo.70.156.167.95.nip.io
+    - host: demo.158.158.93.96.nip.io
       http:
         paths:
           # a-service — root + all its endpoints (/, /healthy, /serverError,
