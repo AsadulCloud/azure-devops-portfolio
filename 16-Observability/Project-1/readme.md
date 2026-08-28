@@ -1,135 +1,311 @@
-## 🎛️ Instrumentation
-- Instrumentation refers to the process of adding monitoring capabilities to your applications, systems, or services.
-- This involves embedding/Writting code or using tools to collect metrics, logs, or traces that provide insights into how the system is performing.
+# 🔭 Kubernetes Observability & Monitoring — Production-Style Implementation on AKS
 
-## 🎯 Purpose of Instrumentation:
-- **Visibility**: It helps you gain visibility into the internal state of your applications and infrastructure.
-- **Metrics Collection**: By collecting key metrics like CPU usage, memory consumption, request rates, error rates, etc., you can understand the health and performance of your system.
-- **Troubleshooting**: When something goes wrong, instrumentation allows you to diagnose the issue quickly by providing detailed insights.
+> Built independently on Azure Kubernetes Service (AKS) as part of a hands-on DevOps portfolio.  
+> Demonstrates real-world monitoring, alerting, and debugging skills using industry-standard tools.
 
-## ⚙️ How it Works:
-- **Code-Level Instrumentation**: You can add instrumentation directly in your application code to expose metrics. For example, in a `Node.js` application, you might use a library like prom-client to expose custom metrics.
+---
 
-## 📈 Instrumentation in Prometheus:
-- 📤 **Exporters**: Prometheus uses exporters to collect metrics from different systems. These exporters expose metrics in a format that Prometheus can scrape and store.
-    - **Node Exporter**: Collects system-level metrics from Linux/Unix systems.
-    - **MySQL Exporter (For MySQL Database)**:  Collects metrics from a MySQL database.
-    - **PostgreSQL Exporter (For PostgreSQL Database)**: Collects metrics from a PostgreSQL database.
-- 📊 **Custom Metrics**: You can instrument your application to expose custom metrics that are relevant to your specific use case. For example, you might track the number of user logins per minute.
+## 🙋 Why I Built This
 
-## 📈 Types of Metrics in Prometheus
-- 🔄️ **Counter**:
-    - A Counter is a cumulative metric that represents a single numerical value that only ever goes up. It is used for counting events like the number of HTTP requests, errors, or tasks completed.
-    - **Example**: Counting the number of times a container restarts in your Kubernetes cluster
-    - **Metric Example**: `kube_pod_container_status_restarts_total`
+I built this project to demonstrate that I can **set up, configure, debug, and fix** a production-style observability stack on Kubernetes — not just deploy tools, but understand why things work, adapt to real problems, and solve them independently.
 
-- 📏 **Gauge**:
-    - A Gauge is a metric that represents a single numerical value that can go up and down. It is typically used for things like memory usage, CPU usage, or the current number of active users.
-    - **Example**: Monitoring the memory usage of a container in your Kubernetes cluster.
-    - **Metric Example**: `container_memory_usage_bytes`
+---
 
-- 📊 **Histogram**:
-    - A Histogram samples observations (usually things like request durations or response sizes) and counts them in configurable buckets.
-    - It also provides a sum of all observed values and a count of observations.
-    - **Example**: Measuring the response time of Kubernetes API requests in various time buckets.
-    - **Metric Example**: `apiserver_request_duration_seconds_bucket`
+## 📚 Core Concepts Applied
 
-- 📝 Summary:
-    - Similar to a Histogram, a Summary samples observations and provides a total count of observations, their sum, and configurable quantiles (percentiles).
-    - **Example**: Monitoring the 95th percentile of request durations to understand high latency in your Kubernetes API.
-    - **Metric Example**: `apiserver_request_duration_seconds_sum`
+> A quick reference to the key concepts this project puts into practice.
 
+| Concept | What It Means | How I Used It |
+|---|---|---|
+| **Monitoring** | Tracking *what* is happening — CPU, memory, restarts via predefined metrics and thresholds | Configured Prometheus to scrape metrics and trigger alerts when CPU > 50% or pod restarts > 2 |
+| **Observability** | Understanding *why* it's happening by correlating logs, metrics, and traces | Implemented the metrics pillar; EFK (logs) and Jaeger (traces) are next steps |
+| **Instrumentation** | Adding code or exporters to expose internal system data as metrics | Used `prom-client` library in Node.js apps to expose custom HTTP metrics |
+| **Service Discovery** | Automatically finding and scraping new targets without manual config | Configured `ServiceMonitor` CR so Prometheus auto-discovers app pods in `dev` namespace |
+| **Exporters** | Agents that collect metrics from systems that don't natively support Prometheus | kube-prometheus-stack includes Node Exporter (hardware) and kube-state-metrics (K8s objects) |
+| **PromQL** | Prometheus query language to filter, aggregate, and analyze time-series metrics | Wrote queries for CPU usage, restart counts, request rates, and 95th percentile latency |
+| **Alertmanager** | Handles deduplication, grouping, and routing of alerts to receivers like email or Slack | Configured routing rules, inhibition rules, and Gmail SMTP delivery |
 
-# 🎯 Project Objectives
-- 🛠️ **Implement Custom Metrics in Node.js Application**: Use the prom-client library to write and expose custom metrics in the Node.js application.
-- 🚨 **Set Up Alerts in Alertmanager**: Configure Alertmanager to send email notifications if a container crashes more than two times.
-- 📝 **Set Up Logging**: Implement logging on both application and cluster (node) logs for better observability using EFK stack(Elasticsearch, FluentBit, Kibana).
-- 📸 **Implement Distributed Tracing for Node.js Application**: Enhance observability by instrumenting the Node.js application for distributed tracing using Jaeger. enabling better performance monitoring and troubleshooting of complex, multi-service architectures.
+---
 
-# 🏠 Architecture
-![Project Architecture](images/architecture.gif)
+## 🛠️ Skills Demonstrated
 
-## 1) Write Custom Metrics
-- Please take a look at `day-4/application/service-a/index.js` file to learn more about custom metrics. below is the brief overview
-- **Express Setup**: Initializes an Express application and sets up logging with Morgan.
-- **Logging with Pino**: Defines a custom logging function using Pino for structured logging.
-- **Prometheus Metrics with prom-client**: Integrates Prometheus for monitoring HTTP requests using the prom-client library:
-    - `http_requests_total`: counter
-    - `http_request_duration_seconds`: histogram
-    - `http_request_duration_summary_seconds`: summary
-    - `node_gauge_example`: gauge for tracking async task duration
-### Basic Routes:
-- `/` : Returns a "Running" status.
-- `/healthy`: Returns the health status of the server.
-- `/serverError`: Simulates a 500 Internal Server Error.
-- `/notFound`: Simulates a 404 Not Found error.
-- `/logs`: Generates logs using the custom logging function.
-- `/crash`: Simulates a server crash by exiting the process.
-- `/example`: Tracks async task duration with a gauge.
-- `/metrics`: Exposes Prometheus metrics endpoint.
-- `/call-service-b`: To call service b & receive data from service b
+| Skill | Evidence in This Project |
+|---|---|
+| Kubernetes | Deployed and managed multi-namespace workloads on AKS |
+| Helm | Installed kube-prometheus-stack, managed releases |
+| Kustomize | Managed all manifests with Kustomize overlays |
+| Prometheus | Configured scraping, wrote PromQL queries, defined alert rules |
+| Alertmanager | Configured routing, receivers, inhibition rules, email delivery |
+| Debugging | Diagnosed and fixed a real cross-namespace alerting bug |
+| NGINX Ingress | Exposed services via Ingress instead of port-forwarding |
+| Azure AKS | Built and managed the full stack on Azure |
+| Security | Stored all credentials as Kubernetes Secrets, never hardcoded |
 
-## 2) dockerize & push it to the registry
-- To containerize the applications and push it to your Docker registry, run the following commands:
-```bash
-cd day-4
+---
 
-# Dockerize microservice - a
-docker build -t <<NAME_OF_YOUR_REPO>>:<<TAG>> application/service-a/ 
-# or use abhishekf5/demoservice-a:v
+## 🏗️ Stack Used
 
-# Dockerize microservice - b
-docker build -t <<NAME_OF_YOUR_REPO>>:<<TAG>> application/service-b/ 
+| Tool | Purpose |
+|---|---|
+| **Azure AKS** | Kubernetes cluster |
+| **Prometheus** | Metrics collection & alerting rules |
+| **Grafana** | Metrics visualization & dashboards |
+| **Alertmanager** | Alert routing & email notification |
+| **NGINX Ingress** | URL-based access to all UIs |
+| **Kustomize** | Manifest management |
+| **Helm** | kube-prometheus-stack installation |
+| **Node.js (prom-client)** | Custom application metrics |
+| **Gmail SMTP** | Alert email delivery |
 
-or use the pre-built images
-- abhishekf5/demoservice-a:v
-- abhishekf5/demoservice-b:v
+---
+
+## 🏠 Architecture
 
 ```
+┌─────────────────────────────────────────────────────────┐
+│                      AKS Cluster                         │
+│                                                          │
+│   ┌──────────────┐      ┌────────────────────────────┐  │
+│   │   dev ns      │      │       monitoring ns         │  │
+│   │              │      │                            │  │
+│   │  service-a ──┼──────┼──► ServiceMonitor          │  │
+│   │  service-b   │      │         │                  │  │
+│   └──────────────┘      │         ▼                  │  │
+│                         │    Prometheus               │  │
+│                         │         │                  │  │
+│                         │    ┌────┴─────┐            │  │
+│                         │    ▼          ▼            │  │
+│                         │  Grafana  Alertmanager      │  │
+│                         │               │            │  │
+│                         └───────────────┼────────────┘  │
+│                                         ▼               │
+│   ┌─────────────────────────────────┐  Gmail            │
+│   │  NGINX Ingress Controller        │                   │
+│   │  /grafana /prometheus            │                   │
+│   │  /alertmanager                   │                   │
+│   └─────────────────────────────────┘                   │
+└─────────────────────────────────────────────────────────┘
+```
 
-## 3) Kubernetes manifest
-- Review the Kubernetes manifest files located in `day-4/kubernetes-manifest`.
-- Apply the Kubernetes manifest files to your cluster by running:
+---
+
+## 📁 Project Structure
+
+```
+Project-1/
+├── application/
+│   ├── service-a/               # Node.js app with custom Prometheus metrics
+│   └── service-b/               # Downstream microservice
+├── kubernetes-manifest/
+│   └── kustomization.yml        # App deployment via Kustomize
+├── alerts-alertmanager-servicemonitor-manifest/
+│   ├── alerts.yml               # PrometheusRule — HighCpuUsage & PodRestart
+│   ├── email-secrets.yml        # Gmail credentials as K8s Secret
+│   ├── alertmanager-secret.yml  # Direct Alertmanager config
+│   ├── serviceMonitor.yml       # Scrape config for dev namespace apps
+│   └── kustomization.yml
+└── README.md
+```
+
+---
+
+## 🚀 Installation
+
+### Step 1 — Install kube-prometheus-stack
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+kubectl create ns monitoring
+
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  -n monitoring
+```
+
+### Step 2 — Deploy Applications
+
 ```bash
 kubectl create ns dev
-
 kubectl apply -k kubernetes-manifest/
 ```
 
-## 4) Test all the endpoints
-- Open a browser and get the LoadBalancer DNS name & hit the DNS name with following routes to test the application:
-    - `/`
-    - `/healthy`
-    - `/serverError`
-    - `/notFound`
-    - `/logs`
-    - `/example`
-    - `/metrics`
-    - `/call-service-b`
-- Alternatively, you can run the automated script `test.sh`, which will automatically send random requests to the LoadBalancer and generate metrics:
+### Step 3 — Set Up NGINX Ingress
+
 ```bash
-./test.sh <<LOAD_BALANCER_DNS_NAME>>
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace
 ```
 
-## 5) Configure Alertmanager
-- Review the Alertmanager configuration files located in `day-4/alerts-alertmanager-servicemonitor-manifest` but below is the brief overview
-    - Before configuring Alertmanager, we need credentials to send emails. For this project, we are using Gmail, but any SMTP provider like AWS SES can be used. so please grab the credentials for that.
-    - Open your Google account settings and search App password & create a new password & put the password in `day-4/alerts-alertmanager-servicemonitor-manifest/email-secret.yml`
-    - One last thing, please add your email id in the `day-4/alerts-alertmanager-servicemonitor-manifest/alertmanagerconfig.yml`
-- **HighCpuUsage**: Triggers a warning alert if the average CPU usage across instances exceeds 50% for more than 5 minutes.
-- **PodRestart**: Triggers a critical alert immediately if any pod restarts more than 2 times.
-- Apply the manifest files to your cluster by running:
+### Step 4 — Deploy Alerting Stack
+
 ```bash
 kubectl apply -k alerts-alertmanager-servicemonitor-manifest/
 ```
-- Wait for 4-5 minutes and then check the Prometheus UI to confirm that the custom metrics implemented in the Node.js application are available:
-    - `http_requests_total`: counter
-    - `http_request_duration_seconds`: histogram
-    - `http_request_duration_summary_seconds`: summary
-    - `node_gauge_example`: gauge for tracking async task duration
 
-## 6) Testing Alerts
-- To test the alerting system, manually crash the container more than 2 times to trigger an alert (email notification).
-- To crash the application container, hit the following endpoint
-- `<<LOAD_BALANCER_DNS_NAME>>/crash`
-- You should receive an email once the application container has restarted at least 3 times.
+### Step 5 — Verify Everything
+
+```bash
+kubectl get all -n monitoring
+kubectl get prometheusrule -n monitoring
+kubectl get servicemonitor -n monitoring
+```
+
+---
+
+## 📈 Custom Application Metrics
+
+Instrumented Node.js apps with `prom-client` to expose:
+
+| Metric | Type | What It Measures |
+|---|---|---|
+| `http_requests_total` | Counter | Total requests per endpoint |
+| `http_request_duration_seconds` | Histogram | Request latency buckets |
+| `http_request_duration_summary_seconds` | Summary | 95th percentile latency |
+| `node_gauge_example` | Gauge | Async task duration |
+
+---
+
+## 🔍 PromQL Queries
+
+```bash
+# CPU usage across all nodes
+100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)
+
+# Pod restart count
+kube_pod_container_status_restarts_total > 2
+
+# HTTP request rate per service
+rate(http_requests_total[5m])
+
+# 95th percentile request duration
+histogram_quantile(0.95,
+  sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+)
+```
+
+---
+
+## 🚨 Alert Rules Configured
+
+| Alert | Expression | Severity | Trigger |
+|---|---|---|---|
+| `HighCpuUsage` | `100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 50` | warning | CPU > 50% for 5 min |
+| `PodRestart` | `kube_pod_container_status_restarts_total > 2` | critical | Instantly on 3rd restart |
+
+---
+
+## 🐛 Real Problem I Found & Fixed
+
+> This section shows I can debug production issues, not just deploy tools.
+
+### Problem
+Alert emails stopped arriving after `service-a` (running in `dev` namespace) restarted — even though Alertmanager logs showed no errors and the config looked correct.
+
+### How I Debugged It
+
+```bash
+# Step 1 — Checked Alertmanager logs — no errors found
+kubectl logs -n monitoring alertmanager-...-0 -c alertmanager --tail=50
+
+# Step 2 — Read the live rendered config (not the source file)
+kubectl exec -n monitoring alertmanager-...-0 \
+  -c alertmanager -- cat /etc/alertmanager/config_out/alertmanager.env.yaml
+
+# Step 3 — Opened Alertmanager UI — saw ALL alerts going to null receiver
+
+# Step 4 — Confirmed pod had 8 restarts with zero emails sent
+kubectl get pod -n dev
+# service-a   Running   8 (40m ago)   ← 8 restarts, no email!
+```
+
+### Root Cause
+`AlertmanagerConfig` CR automatically injects `namespace="monitoring"` into every route. Since `service-a` runs in the `dev` namespace, its alerts carried `namespace="dev"` label and never matched any route — silently dropped to null.
+
+```yaml
+# What I configured:
+- matchers:
+  - alertname="PodRestart"
+
+# What the operator actually applied:
+- matchers:
+  - alertname="PodRestart"
+  - namespace="monitoring"  ← auto-injected, blocked dev namespace alerts
+```
+
+### Fix
+Replaced `AlertmanagerConfig` CR with a direct Kubernetes Secret that the operator cannot override — routes now match alerts from any namespace:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-monitoring-kube-prometheus-alertmanager
+  namespace: monitoring
+stringData:
+  alertmanager.yaml: |
+    route:
+      routes:
+      - matchers:
+        - alertname="PodRestart"  # no namespace restriction — catches all namespaces
+        receiver: 'send-email'
+        repeat_interval: 5m
+```
+
+**Result**: Email delivered within 35 seconds. ✅
+
+---
+
+## 🎓 Key Things I Learned
+
+- `AlertmanagerConfig` CR is **namespace-scoped by design** — cross-namespace alerting requires a direct Kubernetes Secret, not a CR
+- Always verify the **live rendered config** (`alertmanager.env.yaml`), not just source manifests — the operator silently transforms what you wrote
+- Kustomize keeps related manifests clean and manageable without Helm values complexity
+- NGINX Ingress is more realistic for production than port-forwarding — services are accessible without CLI access
+- Debugging order that works: logs → rendered config → UI → metric labels → routing rules
+
+---
+
+## 📸 Proof of Work
+
+> Screenshots and evidence that this stack was fully deployed and working end-to-end.
+
+### ✅ Alert Email Received
+![Alert Email](proof/alert-email.png)
+> Real email received in Gmail when service-a exceeded 2 restarts in the dev namespace.
+
+### 📊 Grafana Dashboard
+![Grafana Dashboard](proof/grafana-dashboard.png)
+> Live metrics visualized in Grafana — CPU usage, memory, pod status across namespaces.
+
+### 🔍 Prometheus Query Page
+![Prometheus Queries](proof/prometheus-queries.png)
+> Custom PromQL queries running against live cluster data.
+
+### 🚨 Alertmanager UI
+![Alertmanager UI](proof/alertmanager-ui.png)
+> Alertmanager showing active alerts routed to send-email receiver.
+
+---
+
+## 🔜 Next Steps
+
+- [ ] EFK Stack — log collection from all namespaces with Fluent Bit + Kibana dashboards
+- [ ] Distributed tracing with Jaeger
+- [ ] Slack webhook integration for team alerts
+- [ ] Thanos for long-term Prometheus metric storage
+
+---
+
+## 📂 GitHub Portfolio
+
+🔗 [github.com/AsadulCloud/azure-devops-portfolio](https://github.com/AsadulCloud/azure-devops-portfolio)
+
+---
+
+> 💡 I am actively looking for Junior Cloud/DevOps Engineer roles in Lisbon, Portugal.  
+> Happy to walk through any part of this project in detail during a technical interview.
