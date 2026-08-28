@@ -275,20 +275,17 @@ stringData:
 > Screenshots and evidence that this stack was fully deployed and working end-to-end.
 
 ### ✅ Alert Email Received
-![Alert Email](proof/alert-email.png)
+![Alert Email](proof/alert-email.pdf)
 > Real email received in Gmail when service-a exceeded 2 restarts in the dev namespace.
 
 ### 📊 Grafana Dashboard
-![Grafana Dashboard](proof/grafana-dashboard.png)
+![Grafana Dashboard](proof/grafana_dashboard_ss_1)
 > Live metrics visualized in Grafana — CPU usage, memory, pod status across namespaces.
 
 ### 🔍 Prometheus Query Page
-![Prometheus Queries](proof/prometheus-queries.png)
+![Prometheus Queries](proof/Prometheus Time Series Collection and Processing Server.pdf)
 > Custom PromQL queries running against live cluster data.
 
-### 🚨 Alertmanager UI
-![Alertmanager UI](proof/alertmanager-ui.png)
-> Alertmanager showing active alerts routed to send-email receiver.
 
 ---
 
