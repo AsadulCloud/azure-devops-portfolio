@@ -287,7 +287,7 @@ stringData:
 > Custom PromQL queries running against live cluster data.
 
 ### 📊 Grafana Dashboard Export
-[Download Dashboard JSON](dashboards/service-a Monitoring Overview-1787915013636.json)
+[Download Dashboard JSON](dashboards/service-a-Monitoring-Overview-1787915013636.json)
 > Exported Grafana dashboard JSON — can be imported directly into any Grafana instance to recreate the exact dashboard.
 
 
