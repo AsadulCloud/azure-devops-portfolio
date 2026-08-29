@@ -52,6 +52,8 @@ I built this project to demonstrate that I can **set up, configure, debug, and f
 | **Prometheus** | Metrics collection & alerting rules |
 | **Grafana** | Metrics visualization & dashboards |
 | **Alertmanager** | Alert routing & email notification |
+| **Node Exporter** | Hardware metrics (CPU, memory, disk) |
+| **kube-state-metrics** | Kubernetes object metrics (pods, restarts) |
 | **NGINX Ingress** | URL-based access to all UIs |
 | **Kustomize** | Manifest management |
 | **Helm** | kube-prometheus-stack installation |
@@ -62,31 +64,15 @@ I built this project to demonstrate that I can **set up, configure, debug, and f
 
 ## 🏠 Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      AKS Cluster                         │
-│                                                          │
-│   ┌──────────────┐      ┌────────────────────────────┐  │
-│   │   dev ns      │      │       monitoring ns         │  │
-│   │              │      │                            │  │
-│   │  service-a ──┼──────┼──► ServiceMonitor          │  │
-│   │  service-b   │      │         │                  │  │
-│   └──────────────┘      │         ▼                  │  │
-│                         │    Prometheus               │  │
-│                         │         │                  │  │
-│                         │    ┌────┴─────┐            │  │
-│                         │    ▼          ▼            │  │
-│                         │  Grafana  Alertmanager      │  │
-│                         │               │            │  │
-│                         └───────────────┼────────────┘  │
-│                                         ▼               │
-│   ┌─────────────────────────────────┐  Gmail            │
-│   │  NGINX Ingress Controller        │                   │
-│   │  /grafana /prometheus            │                   │
-│   │  /alertmanager                   │                   │
-│   └─────────────────────────────────┘                   │
-└─────────────────────────────────────────────────────────┘
-```
+![Observability Stack on AKS](images/observability-architecture.svg)
+
+**Flow (high level):**
+
+1. **Apps**, **Node Exporter**, and **kube-state-metrics** expose metrics  
+2. **Prometheus** scrapes them and stores time-series data  
+3. **Grafana** queries Prometheus for dashboards  
+4. **Alertmanager** receives alerts and sends email notifications  
+5. **NGINX Ingress** exposes Grafana, Prometheus, Alertmanager, and apps
 
 ---
 
@@ -106,6 +92,8 @@ Project-1/
 │   └── kustomization.yml
 ├── monitoring-ingress/          # Ingress for Prometheus / Grafana / Alertmanager
 ├── dashboards/                  # Exported Grafana dashboard JSON (dashboard-as-code)
+├── images/
+│   └── observability-architecture.svg  # High-level architecture diagram
 ├── proof/                       # Screenshots / PDFs of live stack
 ├── prometheus-grafana-dashboard-guide.md  # PromQL + Grafana panel walkthrough
 ├── generate-traffic.sh          # Load script for live dashboard demos
