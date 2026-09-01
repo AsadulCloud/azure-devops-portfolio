@@ -178,7 +178,7 @@ Portal → Firewall Policy → DNAT rules → + Add a rule collection
 
 | Test | Action | Expected Result |
 |------|--------|-----------------|
-| **1. From your laptop** | Open browser → `http://FIREWALL_PUBLIC_IP` | NGINX HTML page loads ✅ |
+| **1. From your laptop or which you allow** | Open browser → `http://FIREWALL_PUBLIC_IP` | NGINX HTML page loads ✅ |
 | **2. From another IP** | Use VPN / different network → same URL | Connection times out / refused ❌ |
 | **3. No public IP on VM** | Portal → VM → Overview | Public IP address: **None** |
 | **4. Bastion still works** | Portal → VM → Connect → Bastion | Successful SSH connection ✅ |
