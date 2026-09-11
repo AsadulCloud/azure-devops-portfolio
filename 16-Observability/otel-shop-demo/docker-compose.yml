@@ -1,0 +1,39 @@
+# Skeleton docker-compose – expand this after you write Dockerfiles
+# for each service.
+
+version: "3.8"
+
+services:
+  # Example after you add Dockerfiles:
+  #
+  # product-catalog:
+  #   build: ./src/product-catalog
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+  #     - PORT=8081
+  #
+  # cart:
+  #   build: ./src/cart
+  #   ports:
+  #     - "8082:8082"
+  #   environment:
+  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+  #     - PORT=8082
+  #
+  # ... same pattern for recommendation, payment, checkout, frontend
+  #
+  # otel-collector:
+  #   image: otel/opentelemetry-collector-contrib:latest
+  #   command: ["--config=/etc/otelcol/config.yaml"]
+  #   volumes:
+  #     - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+  #   ports:
+  #     - "4317:4317"
+  #     - "4318:4318"
+
+  # Placeholder so the file is valid
+  placeholder:
+    image: busybox
+    command: ["echo", "Add your services here after writing Dockerfiles"]

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OTel Shop Demo</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    h1 { font-size: 1.75rem; color: var(--accent); }
+    .user { font-size: 0.875rem; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .product {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #334155;
+    }
+    .product:last-child { border-bottom: none; }
+    .price { color: var(--accent); font-weight: 600; }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { opacity: 0.9; }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    #cart-items, #recs { margin-top: 0.75rem; }
+    .empty { color: var(--muted); font-size: 0.9rem; }
+    .total { font-size: 1.1rem; margin-top: 1rem; font-weight: 600; }
+    #message {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      display: none;
+    }
+    #message.success { background: #14532d; display: block; }
+    #message.error { background: #7f1d1d; display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔭 OTel Shop Demo</h1>
+    <div class="user">User: <span id="user-id">...</span></div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Products</h2>
+        <div id="products">Loading...</div>
+      </div>
+
+      <div class="card">
+        <h2>Recommended for you</h2>
+        <div id="recs" class="empty">Loading...</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Cart</h2>
+        <div id="cart-items" class="empty">Empty</div>
+        <div class="total" id="cart-total"></div>
+        <button id="checkout-btn" style="margin-top:1rem;width:100%" disabled>Checkout</button>
+        <div id="message"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let userId = localStorage.getItem('otel-shop-user') || null;
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+      if (userId) headers['X-User-Id'] = userId;
+
+      const res = await fetch(path, { ...options, headers });
+      const newUser = res.headers.get('X-User-Id');
+      if (newUser) {
+        userId = newUser;
+        localStorage.setItem('otel-shop-user', userId);
+        document.getElementById('user-id').textContent = userId.slice(0, 8) + '…';
+      }
+      return res.json();
+    }
+
+    async function loadProducts() {
+      const products = await api('/api/products');
+      const el = document.getElementById('products');
+      el.innerHTML = products.map(p => `
+        <div class="product">
+          <div>
+            <strong>${p.name}</strong><br>
+            <small style="color:var(--muted)">${p.description}</small>
+          </div>
+          <div style="text-align:right">
+            <div class="price">$${p.price.toFixed(2)}</div>
+            <button onclick="addToCart('${p.id}')">Add</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadRecs() {
+      const data = await api('/api/recommendations');
+      const el = document.getElementById('recs');
+      if (!data.recommendations?.length) {
+        el.innerHTML = '<span class="empty">No recommendations</span>';
+        return;
+      }
+      el.innerHTML = data.recommendations.map(p => `
+        <div class="product">
+          <div>${p.name}</div>
+          <div class="price">$${p.price.toFixed(2)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function loadCart() {
+      const data = await api('/api/cart');
+      const el = document.getElementById('cart-items');
+      const totalEl = document.getElementById('cart-total');
+      const btn = document.getElementById('checkout-btn');
+
+      if (!data.items?.length) {
+        el.innerHTML = '<span class="empty">Cart is empty</span>';
+        totalEl.textContent = '';
+        btn.disabled = true;
+        return;
+      }
+
+      // We only have product_ids + qty; for demo we just show ids
+      el.innerHTML = data.items.map(i => `
+        <div class="product">
+          <div>Product ${i.product_id}</div>
+          <div>× ${i.quantity}</div>
+        </div>
+      `).join('');
+      totalEl.textContent = `${data.items.length} item(s)`;
+      btn.disabled = false;
+    }
+
+    async function addToCart(productId) {
+      await api('/api/cart/add', {
+        method: 'POST',
+        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+      });
+      await loadCart();
+    }
+
+    document.getElementById('checkout-btn').addEventListener('click', async () => {
+      const msg = document.getElementById('message');
+      msg.className = '';
+      msg.style.display = 'none';
+
+      try {
+        const result = await api('/api/checkout', { method: 'POST', body: '{}' });
+        if (result.error) {
+          msg.textContent = 'Error: ' + result.error;
+          msg.className = 'error';
+        } else {
+          msg.textContent = `Order ${result.order_id.slice(0,8)}… completed! Total $${result.total.toFixed(2)}`;
+          msg.className = 'success';
+          await loadCart();
+        }
+      } catch (e) {
+        msg.textContent = 'Checkout failed: ' + e.message;
+        msg.className = 'error';
+      }
+    });
+
+    // Init
+    if (userId) {
+      document.getElementById('user-id').textContent = userId.slice(0, 8) + '…';
+    }
+    loadProducts();
+    loadRecs();
+    loadCart();
+  </script>
+</body>
+</html>

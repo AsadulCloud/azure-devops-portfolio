@@ -1,0 +1,6 @@
+# Put your Kubernetes manifests here:
+# - deployments/
+# - services/
+# - configmaps/
+# - otel-collector/
+# - etc.
