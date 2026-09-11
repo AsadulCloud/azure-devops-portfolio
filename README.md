@@ -8,7 +8,7 @@ Hands-on Azure DevOps & cloud engineering projects. Work is organised by numbere
 - **Infrastructure as Code** — Terraform (remote state, OIDC / Workload Identity)
 - **CI/CD & GitOps** — Azure Pipelines (YAML), ArgoCD
 - **Containers & Kubernetes** — Docker, AKS, manifests, NGINX Ingress, Helm, Kustomize
-- **Observability** — Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics, PromQL
+- **Observability** — Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics, PromQL, OpenTelemetry
 - **Configuration management** — Ansible
 - **Scripting** — Bash, Shell
 - **IAM / Identity** — Azure AD, Managed Identity
@@ -32,11 +32,12 @@ Hands-on Azure DevOps & cloud engineering projects. Work is organised by numbere
 | 13 | [Kubernetes Ingress](13-Kubernetes-Ingress/) | Kubernetes, NGINX Ingress |
 | 14 | [Terraform + Ansible Capstone](14-Terraform-Ansible-Capstone/) | Terraform, Ansible, Azure Pipelines, OIDC |
 | 15 | [Three-Tier Architecture Demo](15-Three-Tier-Architecture-Demo-Project/) | Terraform, Azure |
-| 16 | [Observability](16-Observability/Project-1/) | Prometheus, Grafana, Alertmanager, AKS, Kustomize |
+| 16 | [Observability](16-Observability/) | Prometheus, Grafana, OpenTelemetry, AKS |
 
 ### Highlighted projects
 
-- **[16 — Observability](16-Observability/Project-1/)** — Production-style monitoring on AKS (Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics); custom app metrics; cross-namespace alerting fix; dashboard-as-code.
+- **[16 — Observability / OTel Shop Demo](16-Observability/otel-shop-demo/)** — Multi-language microservices shop (Go, Python, Node.js) instrumented with OpenTelemetry; ready for Docker + Kubernetes + Collector.
+- **[16 — Observability / Project-1](16-Observability/Project-1/)** — Production-style monitoring on AKS (Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics); custom app metrics; cross-namespace alerting fix; dashboard-as-code.
 - **[14 — Terraform + Ansible Capstone](14-Terraform-Ansible-Capstone/)** — One pipeline: Terraform provisions VM + key, dynamic Ansible inventory, nginx config; OIDC auth; debug log of real issues.
 - **[12 — Task Manager Microservices](12-Task-Manager-Microservices/)** — Multi-service app on AKS with Redis pub/sub; LoadBalancer → shared NGINX Ingress migration.
 - **[10 — Terraform AKS CI/CD](10-Terraform-AKS-CICD/)** — Infra as code + pipeline build/push/deploy with managed identity / AcrPull.
