@@ -77,3 +77,10 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
     principal_id         = azurerm_kubernetes_cluster.main.kubelet_identity[0].object_id
     skip_service_principal_aad_check = true
 }   
+resource "azurerm_kubernetes_cluster_node_pool" "extra" {
+  name                  = "extrapool"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
+  vm_size               = "Standard_D2_v5"
+  node_count            = 1
+  mode                  = "User"
+}

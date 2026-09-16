@@ -1,0 +1,6 @@
+kibanaConfig:
+  kibana.yml: |
+    server.basePath: /kibana
+    server.rewriteBasePath: true
+
+healthCheckPath: "/kibana/app/kibana"
