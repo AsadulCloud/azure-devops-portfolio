@@ -9,3 +9,4 @@ sp.sh
 # Allow proof screenshots for the capstone project
 !14-Terraform-Ansible-Capstone/Proof/*.png
 !14-Terraform-Ansible-Capstone/Proof/*.jpg
+!17-Youtube-Clone-Project/screenshots/*.png
