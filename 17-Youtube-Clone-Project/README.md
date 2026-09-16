@@ -147,9 +147,9 @@ npm start
 
 | Home Page | Search Results | Pipeline Success |
 |-----------|----------------|------------------|
-| ![Home](./screenshots/home.png) | ![Search](./screenshots/search.png) | ![Pipeline](./screenshots/pipeline.png) |
+| ![Home](./screenshots/Home_Page.png) | ![Search](./Search_Result/.png) | ![Pipeline](./screenshots/Pipeline_Success.png) |
 
-*(Replace with your actual screenshots)*
+
 
 ---
 
