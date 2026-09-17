@@ -10,6 +10,10 @@
 
 **🔗 Live Demo:** [techtutorialwithasad-gyhqeneffqhqd8bn.polandcentral-01.azurewebsites.net](https://techtutorialwithasad-gyhqeneffqhqd8bn.polandcentral-01.azurewebsites.net)
 
+**🔗 Live Demo:** *Not currently live*
+
+> ℹ️ **Note:** After completing and testing this project, the Azure resources were intentionally decommissioned to avoid ongoing costs on a free-tier subscription. The full CI/CD pipeline, code, and screenshots below demonstrate the working, successfully deployed application. The project can be redeployed on request — see [Getting Started](#-getting-started-locally) or reach out directly.
+
 ---
 
 ## 🎯 Project Goal
