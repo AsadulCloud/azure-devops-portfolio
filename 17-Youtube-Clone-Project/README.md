@@ -33,7 +33,7 @@ Every challenge listed below was encountered and solved while building and deplo
 
 ## 🏗️ Architecture Overview
 
-![End-to-End CI/CD Pipeline](./screenshots/architecture-diagram.png)
+![End-to-End CI/CD Pipeline](./screenshots/architecture-diagram.jpg)
 
 ```text
 Developer (VS Code)
