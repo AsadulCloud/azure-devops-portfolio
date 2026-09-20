@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "PartsUnlimited",
+			"path": "../../../../../home/asadul/azure-repo/PartsUnlimited"
+		}
+	],
+	"settings": {
+		"remote.autoForwardPortsFallback": 0
+	}
+}
