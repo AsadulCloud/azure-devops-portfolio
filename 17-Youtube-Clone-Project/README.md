@@ -35,42 +35,6 @@ Every challenge listed below was encountered and solved while building and deplo
 
 ![End-to-End CI/CD Pipeline](./screenshots/architecture-diagram.jpg)
 
-```text
-Developer (VS Code)
-        │
-        │  git push
-        ▼
-Azure Repos (Git)
-        │
-        │  triggers
-        ▼
-┌──────────────────────────────────────┐
-│     Azure Build Pipeline (CI - YAML) │
-│  1. Get Source                       │
-│  2. npm install                      │
-│  3. Inject REACT_APP_RAPID_API_KEY   │
-│  4. npm run build                    │
-│  5. Publish artifacts ("drop")       │
-└──────────────────┬───────────────────┘
-                   │ successful build
-                   │ triggers Release
-                   ▼
-┌──────────────────────────────────────┐
-│   Azure Release Pipeline (CD - Classic) │
-│  1. Get Artifacts                    │
-│  2. Quality Gates                    │
-│     (Critical Bugs must = 0)         │
-│  3. Deploy to Stage (Test slot)      │
-│  4. Manual Approvals                 │
-│  5. Deploy to Production             │
-│  6. Slot Swap (Test ↔ Prod)          │
-└──────────────────┬───────────────────┘
-                   │
-                   ▼
-        Azure App Service (Linux)
-             Test  ↔  Prod
-              (SWAP)
-```
 
 ---
 
@@ -165,13 +129,12 @@ This demonstrates practical release governance without relying only on manual ap
 | Challenge | Solution | Skill Demonstrated |
 |-----------|----------|--------------------|
 | Classic Release Pipelines not available by default | Designed a clean multi-stage YAML pipeline first, then configured Classic Release for CD | Modern Azure DevOps practices |
-| Wrong runtime stack (`NODE` instead of static) | Explicitly set runtime to `STATICSITE\|1.0` | Azure App Service configuration |
 | Build artifacts not available in Deploy stage | Used `PublishBuildArtifacts` + `DownloadBuildArtifacts` correctly | Understanding of agent isolation |
 | React environment variables not available at runtime | Injected all `REACT_APP_*` variables during the **Build** stage | Build-time vs runtime knowledge |
 | 401 / 429 API errors after successful deployment | Diagnosed via browser DevTools and corrected RapidAPI subscription | Production debugging |
 | Gate query matched nothing (`State = Active` did not exist) | Discovered Basic process template uses New / Approved / Committed / Done → adjusted query to `State <> Done` | Process template awareness & query debugging |
 | Free-tier App Service does not support deployment slots | Documented the intended slot + swap pattern and the tier limitation | Understanding of service tier constraints |
-| Slow pipeline (17–25 min) | Identified lack of dependency caching as the main bottleneck | Performance optimization mindset |
+
 
 These are the exact types of problems junior engineers face in real jobs — solving them shows practical experience.
 
@@ -180,7 +143,7 @@ These are the exact types of problems junior engineers face in real jobs — sol
 ## 🚀 Run Locally
 
 ```bash
-git clone https://github.com/<your-username>/Youtube_Clone.git
+git clone https://github.com/AsadulCloud/azure-devops-portfolio/edit/main/17-Youtube-Clone-Project/
 cd Youtube_Clone
 npm install
 ```
@@ -232,26 +195,12 @@ Junior Azure DevOps / Cloud Engineer
 I’m passionate about building reliable CI/CD pipelines and deploying applications to the cloud. This project is one of the practical ways I continuously improve my Azure DevOps and cloud engineering skills.
 
 **Let’s connect!**  
-- LinkedIn: [Your LinkedIn Profile]  
-- GitHub: [Your GitHub Profile]  
-- Email: [your.email@example.com]
+- LinkedIn: [https://www.linkedin.com/in/md-asadul-howlader-96aa821b9/]
+- GitHub: [https://github.com/AsadulCloud/azure-devops-portfolio/]  
+
 
 ---
 
 ⭐ If you found this project useful, feel free to star the repository!  
 I’m always open to feedback, collaboration, or opportunities in Azure DevOps / Cloud Engineering.
 ```
-
-The file is ready. You can download it here:
-
-**[Download README.md](file:///home/workdir/artifacts/README.md)**
-
-Just click the link above (or right-click → Save As) to download the complete file to your computer. 
-
-After downloading:
-1. Place it in the root of your project repository
-2. Update the placeholder links (LinkedIn, GitHub, Email, clone URL)
-3. Add your screenshots in a `screenshots/` folder
-4. Save the architecture diagram as `screenshots/architecture-diagram.png` 
-
-You're all set! Good luck with your job applications. 🚀
