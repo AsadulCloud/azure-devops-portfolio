@@ -171,7 +171,7 @@ I am passionate about building reliable CI/CD pipelines and deploying infrastruc
 
 **Let’s connect**
 
-- LinkedIn: [linkedin.com/in/asadul-howlader] (https://www.linkedin.com/in/md-asadul-howlader-96aa821b9?utm_source=share_via&utm_content=profile&utm_medium=member_ios)
+- LinkedIn: [linkedin.com/in/asadul-howlader][def]
 - GitHub: [https://github.com/AsadulCloud/azure-devops-portfolio]
 - Email: [mdhow0007@gmail.com]
 
@@ -179,3 +179,6 @@ I am passionate about building reliable CI/CD pipelines and deploying infrastruc
 
 If you found this project useful, feel free to star the repository.  
 I am always open to feedback, collaboration, or opportunities in Azure DevOps / Cloud Engineering.
+
+
+[def]: https://www.linkedin.com/in/md-asadul-howlader-96aa821b9?utm_source=share_via&utm_content=profile&utm_medium=member_ios
