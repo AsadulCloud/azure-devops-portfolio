@@ -5,3 +5,4 @@ terraform.tfstate*
 *.tfstate.backup
 secrets.txt
 *secret*
+!18-Terraform-Build-Release-Pipeline/files/*.jpg
