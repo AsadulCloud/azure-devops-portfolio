@@ -42,14 +42,6 @@ Hands-on Azure DevOps & cloud engineering projects. Work is organised by numbere
 - **[12 — Task Manager Microservices](12-Task-Manager-Microservices/)** — Multi-service app on AKS with Redis pub/sub; LoadBalancer → shared NGINX Ingress migration.
 - **[10 — Terraform AKS CI/CD](10-Terraform-AKS-CICD/)** — Infra as code + pipeline build/push/deploy with managed identity / AcrPull.
 
-## Related / reference material
-
-| Path | Notes |
-|---|---|
-| [docs/Focused-Study-Plan.md](docs/Focused-Study-Plan.md) | Study plan |
-| `example-voting-app` | Git submodule — voting app / GitOps lab |
-| `observability-zero-to-hero` | Git submodule — learning notes (days 1–7) |
-| `three-tier-architecture-demo` | Git submodule — related three-tier demo |
 
 ## Notes
 
