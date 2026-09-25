@@ -61,4 +61,4 @@ Hands-on Azure DevOps & cloud engineering projects. Work is organised by numbere
 
 - GitHub: [github.com/AsadulCloud](https://github.com/AsadulCloud)
 - Portfolio repo: [azure-devops-portfolio](https://github.com/AsadulCloud/azure-devops-portfolio)
-- LinkedIn: [linkedin.com/in/asadul-howlader](https://www.linkedin.com/in/asadul-howlader)
+- LinkedIn: [linkedin.com/in/asadul-howlader](https://www.linkedin.com/in/md-asadul-howlader-96aa821b9?utm_source=share_via&utm_content=profile&utm_medium=member_ios)
