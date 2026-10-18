@@ -1,0 +1,19 @@
+name: Test ARC Autoscaling
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate-runner:
+    runs-on: aks-autoscaler-fleet
+    steps:
+      - name: Print Runner Details
+        run: |
+          echo "Hello from Actions Runner Controller on AKS!"
+          hostname
+          uname -a
+
+      - name: Hold Runner Active
+        run: |
+          echo "Holding job for 45 seconds to observe pod scaling..."
+          sleep 45
